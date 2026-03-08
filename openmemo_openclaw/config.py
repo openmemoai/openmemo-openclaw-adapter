@@ -1,0 +1,64 @@
+"""
+Adapter configuration with sensible defaults.
+"""
+
+from dataclasses import dataclass, field
+from typing import Optional
+
+
+@dataclass
+class AdapterConfig:
+    backend: str = "local_api"
+    endpoint: str = "http://localhost:8765"
+    agent_platform: str = "openclaw"
+    persona_id: str = "default"
+    instance_id: str = ""
+
+    injection_strategy: str = "system"
+    conflict_policy: str = "suppress"
+
+    max_injected_items: int = 5
+    max_memory_tokens: int = 200
+    recall_limit: int = 5
+
+    queue_max_retry: int = 3
+    queue_backoff_base: float = 0.5
+
+    scene_override: Optional[str] = None
+
+    db_path: str = "openmemo.db"
+    cloud_url: str = "https://api.openmemo.ai"
+    api_key: Optional[str] = None
+
+    @property
+    def namespace(self) -> str:
+        return f"{self.agent_platform}/{self.persona_id}"
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AdapterConfig":
+        memory = data.get("memory", data)
+        return cls(
+            backend=memory.get("backend", "local_api"),
+            endpoint=memory.get("endpoint", "http://localhost:8765"),
+            agent_platform=memory.get("agent_platform", "openclaw"),
+            persona_id=memory.get("persona_id", "default"),
+            instance_id=memory.get("instance_id", ""),
+            injection_strategy=memory.get("injection_strategy", "system"),
+            conflict_policy=memory.get("conflict_policy", "suppress"),
+            max_injected_items=memory.get("max_injected_items", 5),
+            max_memory_tokens=memory.get("max_memory_tokens", 200),
+            recall_limit=memory.get("recall_limit", 5),
+            queue_max_retry=memory.get("queue_max_retry", 3),
+            queue_backoff_base=memory.get("queue_backoff_base", 0.5),
+            scene_override=memory.get("scene_override"),
+            db_path=memory.get("db_path", "openmemo.db"),
+            cloud_url=memory.get("cloud_url", "https://api.openmemo.ai"),
+            api_key=memory.get("api_key"),
+        )
+
+    @classmethod
+    def from_yaml(cls, path: str) -> "AdapterConfig":
+        import yaml
+        with open(path) as f:
+            data = yaml.safe_load(f)
+        return cls.from_dict(data)
