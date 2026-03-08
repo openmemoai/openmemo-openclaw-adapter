@@ -1,0 +1,105 @@
+<svg width="1400" height="920" viewBox="0 0 1400 920" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1020"/>
+      <stop offset="1" stop-color="#121A33"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="300" y2="140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4F7CFF"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+    <linearGradient id="coreGrad" x1="0" y1="0" x2="1120" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13223F"/>
+      <stop offset="1" stop-color="#182B52"/>
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+    <style>
+      .title { font: 700 34px 'DejaVu Sans', Arial, sans-serif; fill: #F5F7FF; }
+      .subtitle { font: 400 18px 'DejaVu Sans', Arial, sans-serif; fill: #B9C3E1; }
+      .boxTitle { font: 700 24px 'DejaVu Sans', Arial, sans-serif; fill: #F8FAFF; }
+      .boxSub { font: 400 15px 'DejaVu Sans', Arial, sans-serif; fill: #C8D1F0; }
+      .small { font: 600 14px 'DejaVu Sans', Arial, sans-serif; fill: #DCE5FF; letter-spacing: 0.3px; }
+      .micro { font: 400 13px 'DejaVu Sans', Arial, sans-serif; fill: #9FB0DA; }
+      .pill { font: 600 13px 'DejaVu Sans', Arial, sans-serif; fill: #EAF0FF; }
+    </style>
+  </defs>
+  <rect width="1400" height="920" fill="url(#bg)"/>
+  <text x="86" y="88" class="title">OpenMemo × OpenClaw Adapter Architecture</text>
+  <text x="86" y="122" class="subtitle">Cognitive Memory Infrastructure for OpenClaw Agents</text>
+
+  <rect x="86" y="180" rx="26" width="330" height="116" fill="#162342" stroke="#314A86" stroke-width="2" filter="url(#shadow)"/>
+  <text x="251" y="225" text-anchor="middle" class="boxTitle">OpenClaw Agent</text>
+  <text x="251" y="255" text-anchor="middle" class="boxSub">observe → think → act</text>
+  <rect x="169" y="266" rx="14" width="164" height="30" fill="#223767"/>
+  <text x="251" y="286" text-anchor="middle" class="pill">Reasoning loop</text>
+
+  <rect x="502" y="180" rx="26" width="330" height="116" fill="#162342" stroke="#314A86" stroke-width="2" filter="url(#shadow)"/>
+  <text x="667" y="225" text-anchor="middle" class="boxTitle">OpenClaw Plugin</text>
+  <text x="667" y="255" text-anchor="middle" class="boxSub">Lifecycle hooks for memory integration</text>
+  <rect x="574" y="266" rx="14" width="186" height="30" fill="#223767"/>
+  <text x="667" y="286" text-anchor="middle" class="pill">on_message · on_tool_call</text>
+
+  <rect x="918" y="180" rx="26" width="396" height="116" fill="url(#blueGrad)" stroke="#8FB0FF" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1116" y="225" text-anchor="middle" class="boxTitle">OpenMemo Adapter</text>
+  <text x="1116" y="255" text-anchor="middle" class="boxSub">Capture, rank, inject, and write memory asynchronously</text>
+  <rect x="996" y="266" rx="14" width="240" height="30" fill="#314EA5" opacity="0.95"/>
+  <text x="1116" y="286" text-anchor="middle" class="pill">Scene-aware orchestration layer</text>
+
+  <path d="M416 238 C450 238, 470 238, 502 238" stroke="#7EA1FF" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="502,238 487,230 487,246" fill="#7EA1FF"/>
+  <path d="M832 238 C866 238, 886 238, 918 238" stroke="#7EA1FF" stroke-width="5" stroke-linecap="round"/>
+  <polygon points="918,238 903,230 903,246" fill="#7EA1FF"/>
+
+  <rect x="86" y="364" rx="32" width="1228" height="360" fill="#101932" stroke="#263B73" stroke-width="2"/>
+  <text x="114" y="404" class="boxTitle" style="font-size:22px">Adapter Runtime</text>
+  <text x="114" y="430" class="micro">Memory recall runs on the fast path; memory write runs asynchronously.</text>
+
+  <rect x="126" y="468" rx="22" width="250" height="116" fill="#172645" stroke="#36508A" stroke-width="2"/>
+  <text x="251" y="510" text-anchor="middle" class="boxTitle" style="font-size:21px">Capture</text>
+  <text x="251" y="540" text-anchor="middle" class="boxSub">Collect user messages,</text>
+  <text x="251" y="562" text-anchor="middle" class="boxSub">agent responses, and tool outputs</text>
+
+  <rect x="420" y="468" rx="22" width="250" height="116" fill="#172645" stroke="#36508A" stroke-width="2"/>
+  <text x="545" y="510" text-anchor="middle" class="boxTitle" style="font-size:21px">Scene Mapper</text>
+  <text x="545" y="540" text-anchor="middle" class="boxSub">Infer coding, debug,</text>
+  <text x="545" y="562" text-anchor="middle" class="boxSub">deployment, research, and more</text>
+
+  <rect x="714" y="468" rx="22" width="250" height="116" fill="#172645" stroke="#36508A" stroke-width="2"/>
+  <text x="839" y="510" text-anchor="middle" class="boxTitle" style="font-size:21px">Memory Ranker</text>
+  <text x="839" y="540" text-anchor="middle" class="boxSub">Semantic score + recency</text>
+  <text x="839" y="562" text-anchor="middle" class="boxSub">bias + scene match</text>
+
+  <rect x="1008" y="468" rx="22" width="250" height="116" fill="#172645" stroke="#36508A" stroke-width="2"/>
+  <text x="1133" y="510" text-anchor="middle" class="boxTitle" style="font-size:21px">Prompt Injector</text>
+  <text x="1133" y="540" text-anchor="middle" class="boxSub">Inject structured memory</text>
+  <text x="1133" y="562" text-anchor="middle" class="boxSub">into system or user-prefix context</text>
+
+  <path d="M376 526 H420" stroke="#6E96FF" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="420,526 406,518 406,534" fill="#6E96FF"/>
+  <path d="M670 526 H714" stroke="#6E96FF" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="714,526 700,518 700,534" fill="#6E96FF"/>
+  <path d="M964 526 H1008" stroke="#6E96FF" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="1008,526 994,518 994,534" fill="#6E96FF"/>
+
+  <rect x="186" y="630" rx="20" width="424" height="64" fill="#12284D" stroke="#4568B0" stroke-width="2"/>
+  <text x="398" y="656" text-anchor="middle" class="small">FAST PATH</text>
+  <text x="398" y="678" text-anchor="middle" class="boxSub">Recall relevant memories before reasoning</text>
+
+  <rect x="790" y="630" rx="20" width="424" height="64" fill="#182B52" stroke="#627FD1" stroke-width="2"/>
+  <text x="1002" y="656" text-anchor="middle" class="small">ASYNC PATH</text>
+  <text x="1002" y="678" text-anchor="middle" class="boxSub">Queue, retry, and write memories without blocking</text>
+
+  <path d="M398 694 V760" stroke="#7EA1FF" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="398,760 390,746 406,746" fill="#7EA1FF"/>
+  <path d="M1002 694 V760" stroke="#7EA1FF" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="1002,760 994,746 1010,746" fill="#7EA1FF"/>
+
+  <rect x="198" y="760" rx="24" width="1008" height="80" fill="#172645" stroke="#4B6EC0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="702" y="795" text-anchor="middle" class="boxTitle" style="font-size:23px">OpenMemo API Server</text>
+  <text x="702" y="823" text-anchor="middle" class="boxSub">/agent/context · /memory/write</text>
+
+  <rect x="140" y="852" rx="26" width="1124" height="54" fill="url(#coreGrad)" stroke="#5E82D7" stroke-width="2"/>
+  <text x="702" y="885" text-anchor="middle" class="boxTitle" style="font-size:21px">OpenMemo Cognitive Memory Core · Memory Cells · Scene-aware Recall · Conflict Suppression</text>
+</svg>
