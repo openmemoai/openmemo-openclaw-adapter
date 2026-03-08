@@ -31,6 +31,8 @@ Typical limitations:
 
 Instead of storing conversations, OpenMemo creates structured memory cells about user behavior, workflows, and decisions.
 
+![OpenMemo OpenClaw Demo](docs/openmemo-openclaw-demo.gif)
+
 ---
 
 ## Why OpenMemo?
@@ -38,6 +40,8 @@ Instead of storing conversations, OpenMemo creates structured memory cells about
 Most agent memory systems store chat history.
 
 **OpenMemo stores cognitive memory.**
+
+![OpenMemo OpenClaw Architecture](docs/openmemo-openclaw-architecture.svg)
 
 Agents remember:
 
