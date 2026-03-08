@@ -6,7 +6,42 @@ OpenMemo turns OpenClaw from a stateless agent into a memory-driven collaborator
 
 Instead of storing raw conversation logs, OpenMemo builds structured cognitive memories that agents can recall intelligently during reasoning.
 
+> Repository name: `openmemo-openclaw-adapter`
+> PyPI package name: `openmemo-openclaw`
+
 ⭐ If you find this useful, please give the repo a star.
+
+---
+
+## Requirements
+
+- Python 3.9+
+- OpenClaw
+- OpenMemo
+
+> Note: Python 3.6 / 3.7 / 3.8 are **not** supported.
+
+---
+
+## Installation
+
+Make sure your Python version is 3.9 or newer:
+
+```bash
+python --version
+```
+
+Install OpenMemo:
+
+```bash
+pip install openmemo
+```
+
+Install the OpenClaw adapter:
+
+```bash
+pip install openmemo-openclaw
+```
 
 ---
 
@@ -31,8 +66,6 @@ Typical limitations:
 
 Instead of storing conversations, OpenMemo creates structured memory cells about user behavior, workflows, and decisions.
 
-![OpenMemo OpenClaw Demo](docs/openmemo-openclaw-demo.gif)
-
 ---
 
 ## Why OpenMemo?
@@ -40,8 +73,6 @@ Instead of storing conversations, OpenMemo creates structured memory cells about
 Most agent memory systems store chat history.
 
 **OpenMemo stores cognitive memory.**
-
-![OpenMemo OpenClaw Architecture](docs/openmemo-openclaw-architecture.svg)
 
 Agents remember:
 
@@ -202,22 +233,6 @@ These are far more useful for reasoning.
 
 ---
 
-## Installation
-
-Install the adapter:
-
-```bash
-pip install openmemo-openclaw
-```
-
-Install OpenMemo if needed:
-
-```bash
-pip install openmemo
-```
-
----
-
 ## Quick Start
 
 **Start the OpenMemo memory server:**
@@ -357,6 +372,64 @@ You can observe memory behavior in logs.
 ```
 
 This helps developers understand how memory influences agent reasoning.
+
+---
+
+## Troubleshooting
+
+### Python version not supported
+
+If you see:
+
+```
+Requires Python 3.9+, but your version is 3.6.8
+```
+
+Upgrade Python first, then reinstall:
+
+```bash
+python --version
+pip install --upgrade pip
+pip install openmemo-openclaw
+```
+
+### Package not found
+
+The PyPI package name is `openmemo-openclaw`, **not** `openmemo-openclaw-adapter`.
+
+```bash
+# Correct
+pip install openmemo-openclaw
+
+# Wrong
+pip install openmemo-openclaw-adapter
+```
+
+If you use a regional PyPI mirror that hasn't synced yet, try the official source:
+
+```bash
+pip install openmemo-openclaw -i https://pypi.org/simple/
+```
+
+Or install directly from GitHub:
+
+```bash
+pip install git+https://github.com/openmemoai/openmemo-openclaw-adapter.git
+```
+
+### OpenMemo server not running
+
+If you see:
+
+```
+OpenMemo backend unavailable: cannot connect to http://127.0.0.1:8765
+```
+
+Start the OpenMemo server first:
+
+```bash
+openmemo serve --port 8765
+```
 
 ---
 
