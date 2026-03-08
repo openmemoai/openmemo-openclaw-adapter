@@ -5,7 +5,7 @@ from openmemo_openclaw.config import AdapterConfig
 class TestAdapterConfig:
     def test_defaults(self):
         config = AdapterConfig()
-        assert config.backend == "local_api"
+        assert config.backend == "auto"
         assert config.endpoint == "http://localhost:8765"
         assert config.persona_id == "default"
         assert config.injection_strategy == "system"
@@ -14,6 +14,7 @@ class TestAdapterConfig:
         assert config.max_memory_tokens == 200
         assert config.recall_limit == 5
         assert config.queue_max_retry == 3
+        assert config.health_check is True
 
     def test_namespace(self):
         config = AdapterConfig(persona_id="python_architect")
@@ -49,6 +50,35 @@ class TestAdapterConfig:
         assert config.backend == "cloud_api"
         assert config.persona_id == "researcher"
 
+    def test_from_dict_mode_alias(self):
+        data = {
+            "memory": {
+                "mode": "local_api",
+                "persona_id": "tester",
+            }
+        }
+        config = AdapterConfig.from_dict(data)
+        assert config.backend == "local_api"
+
+    def test_from_dict_mode_cloud_alias(self):
+        data = {"memory": {"mode": "cloud"}}
+        config = AdapterConfig.from_dict(data)
+        assert config.backend == "cloud_api"
+
+    def test_from_dict_mode_overrides_backend(self):
+        data = {"memory": {"mode": "library", "backend": "cloud_api"}}
+        config = AdapterConfig.from_dict(data)
+        assert config.backend == "library"
+
     def test_scene_override(self):
         config = AdapterConfig(scene_override="debug")
         assert config.scene_override == "debug"
+
+    def test_health_check_disabled(self):
+        config = AdapterConfig(health_check=False)
+        assert config.health_check is False
+
+    def test_from_dict_health_check(self):
+        data = {"memory": {"health_check": False}}
+        config = AdapterConfig.from_dict(data)
+        assert config.health_check is False

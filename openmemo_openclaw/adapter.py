@@ -1,7 +1,7 @@
 """
 OpenMemo Adapter — main orchestrator for OpenClaw memory integration.
 
-Coordinates: transformer → scene mapper → async write → recall → ranker → injector
+Coordinates: health check → transformer → scene mapper → async write → recall → ranker → injector
 """
 
 import logging
@@ -19,39 +19,52 @@ from openmemo_openclaw.transformer import (
 )
 from openmemo_openclaw.scenes import SceneMapper
 from openmemo_openclaw.ranker import rank_memories
-from openmemo_openclaw.injector import inject_context, build_prompt
+from openmemo_openclaw.injector import inject_context, inject_into_messages, build_prompt
 from openmemo_openclaw.queue_worker import SyncMemoryWorker, AsyncMemoryWorker
+from openmemo_openclaw.health import run_health_check, HealthCheckError
 
-logger = logging.getLogger("openmemo_openclaw.adapter")
+logger = logging.getLogger("openmemo_openclaw")
 
 
 class OpenMemoAdapter:
     """
     Main adapter class connecting OpenClaw to OpenMemo.
 
-    Usage:
-        config = AdapterConfig(persona_id="python_architect")
+    Usage (auto mode — recommended):
+        config = AdapterConfig(backend="auto")
         adapter = OpenMemoAdapter(config)
 
         adapter.on_user_message("deploy my app")
-        context = adapter.recall("deploy application", scene="deployment")
-        prompt = adapter.build_prompt("deploy my app")
+        messages = adapter.inject_context(messages, "deploy my app")
+
+    Usage with YAML config:
+        config = AdapterConfig.from_yaml("openclaw.memory.yaml")
+        adapter = OpenMemoAdapter(config)
 
     Async mode (recommended for agent loops):
-        async with OpenMemoAdapter(config, async_mode=True) as adapter:
-            await adapter.start_async()
-            adapter.on_user_message("deploy my app")
+        adapter = OpenMemoAdapter(config, async_mode=True)
+        await adapter.start_async()
+        adapter.on_user_message("deploy my app")
+        await adapter.stop_async()
     """
 
     def __init__(self, config: AdapterConfig = None, async_mode: bool = False):
         self._config = config or AdapterConfig()
-        self._client = MemoryClient(self._config)
+        self._async_mode = async_mode
         self._scene_mapper = SceneMapper()
         self._session_id = ""
         self._current_task_id = ""
         self._current_scene = ""
         self._current_files: list = []
-        self._async_mode = async_mode
+
+        if self._config.health_check and self._config.backend != "library":
+            try:
+                resolved = run_health_check(self._config)
+                logger.info("[openmemo] backend ready: %s", resolved)
+            except HealthCheckError as e:
+                logger.warning("[openmemo] %s", e)
+
+        self._client = MemoryClient(self._config)
 
         if async_mode:
             self._async_worker = AsyncMemoryWorker(
@@ -71,13 +84,18 @@ class OpenMemoAdapter:
         if self._config.scene_override:
             self._scene_mapper.scene_override(self._config.scene_override)
 
+        logger.info("[openmemo] adapter initialized (backend=%s, mode=%s)",
+                    self._config.backend, "async" if async_mode else "sync")
+
     async def start_async(self):
         if self._async_worker:
             await self._async_worker.start()
+            logger.info("[openmemo] async worker started")
 
     async def stop_async(self):
         if self._async_worker:
             await self._async_worker.stop()
+            logger.info("[openmemo] async worker stopped")
 
     def set_session(self, session_id: str):
         self._session_id = session_id
@@ -145,6 +163,8 @@ class OpenMemoAdapter:
             scene=effective_scene,
             limit=limit or self._config.recall_limit,
         )
+        logger.info("[openmemo] recall query=%r scene=%s hit=%d",
+                    query[:50], effective_scene or "auto", len(memories))
         return memories
 
     def recall_ranked(self, query: str, scene: str = "",
@@ -163,6 +183,21 @@ class OpenMemoAdapter:
         )
 
         return ranked[:self._config.max_injected_items]
+
+    def inject_context(self, messages: List[dict], query: str,
+                       scene: str = "") -> List[dict]:
+        memories = self.recall(query, scene=scene)
+        if not memories:
+            logger.debug("[openmemo] cold start, no memories to inject")
+            return messages
+
+        return inject_into_messages(
+            messages,
+            memories,
+            strategy=self._config.injection_strategy,
+            max_items=self._config.max_injected_items,
+            max_tokens=self._config.max_memory_tokens,
+        )
 
     def get_context(self, query: str, scene: str = "") -> Optional[str]:
         memories = self.recall(query, scene=scene)
@@ -210,6 +245,7 @@ class OpenMemoAdapter:
 
     def close(self):
         self._client.close()
+        logger.info("[openmemo] adapter closed")
 
     def __enter__(self):
         return self
@@ -237,6 +273,9 @@ class OpenMemoAdapter:
                 "event_type": event.get("type", ""),
             },
         }
+
+        logger.info("[openmemo] scene=%s type=%s queued_write content=%r",
+                    scene, memory_type, content[:60])
 
         if self._async_mode and self._async_worker:
             self._async_worker.enqueue_sync(payload)

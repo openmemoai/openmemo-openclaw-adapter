@@ -1,5 +1,11 @@
 """
 Adapter configuration with sensible defaults.
+
+Supports three modes:
+  - auto: try library → local_api → cloud (recommended)
+  - local_api: force local API server
+  - library: direct SDK (no server needed)
+  - cloud: force cloud API
 """
 
 from dataclasses import dataclass, field
@@ -8,7 +14,7 @@ from typing import Optional
 
 @dataclass
 class AdapterConfig:
-    backend: str = "local_api"
+    backend: str = "auto"
     endpoint: str = "http://localhost:8765"
     agent_platform: str = "openclaw"
     persona_id: str = "default"
@@ -30,6 +36,8 @@ class AdapterConfig:
     cloud_url: str = "https://api.openmemo.ai"
     api_key: Optional[str] = None
 
+    health_check: bool = True
+
     @property
     def namespace(self) -> str:
         return f"{self.agent_platform}/{self.persona_id}"
@@ -37,8 +45,11 @@ class AdapterConfig:
     @classmethod
     def from_dict(cls, data: dict) -> "AdapterConfig":
         memory = data.get("memory", data)
+        mode = memory.get("mode", memory.get("backend", "auto"))
+        if mode == "cloud":
+            mode = "cloud_api"
         return cls(
-            backend=memory.get("backend", "local_api"),
+            backend=mode,
             endpoint=memory.get("endpoint", "http://localhost:8765"),
             agent_platform=memory.get("agent_platform", "openclaw"),
             persona_id=memory.get("persona_id", "default"),
@@ -54,6 +65,7 @@ class AdapterConfig:
             db_path=memory.get("db_path", "openmemo.db"),
             cloud_url=memory.get("cloud_url", "https://api.openmemo.ai"),
             api_key=memory.get("api_key"),
+            health_check=memory.get("health_check", True),
         )
 
     @classmethod

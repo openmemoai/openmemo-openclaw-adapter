@@ -13,6 +13,7 @@ def adapter():
         backend="library",
         db_path=path,
         persona_id="test_agent",
+        health_check=False,
     )
     a = OpenMemoAdapter(config)
     yield a
@@ -71,7 +72,7 @@ class TestAdapter:
     def test_context_manager(self):
         fd, path = tempfile.mkstemp(suffix=".db")
         os.close(fd)
-        config = AdapterConfig(backend="library", db_path=path)
+        config = AdapterConfig(backend="library", db_path=path, health_check=False)
         with OpenMemoAdapter(config) as a:
             a.on_user_message("test")
         os.remove(path)
@@ -92,3 +93,22 @@ class TestAdapter:
         adapter.on_user_message("wrote some Python code")
         scenes = adapter.list_scenes()
         assert isinstance(scenes, list)
+
+    def test_inject_context_cold_start(self, adapter):
+        messages = [{"role": "user", "content": "hello"}]
+        result = adapter.inject_context(messages, query="hello")
+        assert result == messages
+
+    def test_inject_context_with_memory(self, adapter):
+        adapter.on_user_message("User prefers Python backend")
+        messages = [
+            {"role": "system", "content": "You are helpful."},
+            {"role": "user", "content": "which language?"},
+        ]
+        result = adapter.inject_context(messages, query="Python language")
+        assert len(result) >= 2
+
+    def test_set_files(self, adapter):
+        adapter.set_files(["src/app.py", "Dockerfile"])
+        adapter.on_user_message("deploy this app")
+        assert adapter.stats["current_scene"] in ("deployment", "coding", "general")
