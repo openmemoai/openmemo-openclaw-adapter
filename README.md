@@ -1,255 +1,375 @@
 # OpenMemo × OpenClaw Adapter
 
-Cognitive Memory Backend for OpenClaw Agents.
+**Cognitive Memory Infrastructure for OpenClaw Agents**
 
-OpenClaw runs as usual — just point memory backend to OpenMemo.
+OpenMemo turns OpenClaw from a stateless agent into a memory-driven collaborator.
 
-## Quick Start
+Instead of storing raw conversation logs, OpenMemo builds structured cognitive memories that agents can recall intelligently during reasoning.
 
-### 1. Install
+⭐ If you find this useful, please give the repo a star.
 
-```bash
-pip install openmemo openmemo-openclaw
-```
+---
 
-### 2. Start OpenMemo Local Server
+## Overview
 
-```bash
-openmemo serve --port 8765
-```
+OpenClaw ships with basic memory mechanisms such as:
 
-### 3. Configure OpenClaw
+- `session.jsonl`
+- `memory.md`
+- `soul.md`
 
-Create `openclaw.memory.yaml`:
+These are useful for storing conversation history, but they are not designed for long-term cognitive memory.
 
-```yaml
-memory:
-  backend: openmemo
-  mode: local_api
-  endpoint: http://127.0.0.1:8765
-  injection_strategy: system
-  conflict_policy: suppress
-  max_injected_items: 3
-```
+Typical limitations:
 
-### 4. Run OpenClaw
+- Session logs grow indefinitely
+- Context compression causes information loss
+- Markdown memory is unstructured
+- Retrieval lacks task awareness
 
-```bash
-openclaw run
-```
+**OpenMemo solves this by introducing cognitive memory infrastructure for agents.**
 
-That's it. OpenClaw runs normally, with long-term memory powered by OpenMemo.
+Instead of storing conversations, OpenMemo creates structured memory cells about user behavior, workflows, and decisions.
 
-## Three Running Modes
+---
 
-### Auto (Recommended)
+## Why OpenMemo?
 
-```yaml
-memory:
-  backend: openmemo
-  mode: auto
-```
+Most agent memory systems store chat history.
 
-Tries library → local_api → cloud. Zero config needed.
+**OpenMemo stores cognitive memory.**
 
-### Local API
+Agents remember:
 
-```yaml
-memory:
-  backend: openmemo
-  mode: local_api
-  endpoint: http://127.0.0.1:8765
-```
+- User preferences
+- Successful workflows
+- Deployment habits
+- Debugging strategies
+- Decision patterns
 
-Best for: debugging, cross-language agents, stable deployment.
+This enables agents to behave like persistent collaborators, not stateless chatbots.
 
-### Library (Zero Server)
-
-```yaml
-memory:
-  backend: openmemo
-  mode: library
-```
-
-No separate process. Lowest latency. Best user experience.
-Requires `pip install openmemo`.
-
-### Cloud
-
-```yaml
-memory:
-  backend: openmemo
-  mode: cloud
-  endpoint: https://api.openmemo.ai
-  api_key: your-api-key
-```
-
-Best for: multi-device sync, hosted environments, shared memory.
-
-## How It Works
-
-```
-openclaw run
-    │
-    ▼
-Plugin Init (load config, health check)
-    │
-    ▼
-Hook Registration
-  • on_user_message
-  • on_agent_response
-  • on_tool_call
-  • on_task_complete
-    │
-    ▼
-Each inference round:
-  1. Recall (query → /agent/context → memory context)
-  2. Scene detection (auto: coding/debug/deployment/research/...)
-  3. Inject into prompt (system or user_prefix strategy)
-  4. Agent runs inference
-  5. Async write (event → queue → OpenMemo)
-```
-
-## Python API
-
-### Plugin (Recommended)
-
-```python
-from openmemo_openclaw import OpenClawMemoryPlugin
-
-# From YAML config
-plugin = OpenClawMemoryPlugin.from_yaml("openclaw.memory.yaml")
-
-# Or from dict
-plugin = OpenClawMemoryPlugin.from_dict({
-    "memory": {
-        "mode": "auto",
-        "injection_strategy": "system",
-    }
-})
-
-# Hook lifecycle events
-plugin.on_message("deploy my app")
-plugin.on_response("Using Docker to deploy", tools=["docker"])
-plugin.on_tool_call("docker", "build succeeded")
-plugin.on_task_complete("Deployed app via Docker")
-
-# Inject memory into message list
-messages = [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "How should I deploy?"},
-]
-messages = plugin.inject_context(messages, query="deploy application")
-
-# Or get raw context string
-context = plugin.get_context("deployment tools")
-
-# Or enhance a single prompt
-prompt = plugin.enhance_prompt("Which language should I use?")
-```
-
-### Adapter (Advanced)
-
-```python
-from openmemo_openclaw import OpenMemoAdapter, AdapterConfig
-
-config = AdapterConfig(
-    backend="local_api",
-    endpoint="http://localhost:8765",
-    persona_id="python_architect",
-    injection_strategy="system",
-    conflict_policy="suppress",
-    max_injected_items=5,
-    max_memory_tokens=200,
-)
-adapter = OpenMemoAdapter(config)
-
-# Same API as plugin, plus:
-adapter.set_files(["src/app.py", "Dockerfile"])  # scene hint
-adapter.recall_ranked("deployment", scene="deployment")  # ranked results
-```
-
-### Async Mode
-
-```python
-adapter = OpenMemoAdapter(config, async_mode=True)
-await adapter.start_async()
-
-adapter.on_user_message("deploy my app")  # non-blocking write
-
-await adapter.stop_async()
-```
-
-## Health Check
-
-On startup, the adapter automatically verifies:
-
-- Endpoint reachable
-- `/memory/search` responds
-- `/agent/context` responds
-
-If anything fails:
-
-```
-OpenMemo backend unavailable: cannot connect to http://127.0.0.1:8765
-```
-
-Disable with `health_check: false` in config.
-
-## Structured Logs
-
-```
-[openmemo] adapter initialized (backend=local_api, mode=sync)
-[openmemo] scene=deployment type=observation queued_write content="deploy my Python app..."
-[openmemo] recall query="deploy" scene=deployment hit=2
-[openmemo] injected 2 memories into system prompt
-[openmemo] adapter closed
-```
-
-Enable with standard Python logging:
-
-```python
-import logging
-logging.basicConfig(level=logging.INFO)
-```
+---
 
 ## Architecture
+
+OpenMemo integrates with OpenClaw through a lightweight adapter layer.
 
 ```
 OpenClaw Agent
 │
 ▼
-OpenClaw Plugin (lifecycle hooks)
+OpenClaw Plugin (Lifecycle Hooks)
 │
 ▼
-OpenMemo Adapter (orchestration)
-├── Transformer (event normalization)
-├── Scene Mapper (auto-detect scene)
-├── Ranker (recency + semantic + scene scoring)
-├── Injector (system / user_prefix injection)
-└── Queue Worker (async write with retry)
+OpenMemo Adapter
+│
+├── Memory Recall
+└── Async Memory Write
 │
 ▼
-Memory Client (provider selection + fallback)
-├── Library Provider (direct SDK)
-├── Local API Provider (HTTP → openmemo serve)
-└── Cloud API Provider (HTTP → api.openmemo.ai)
+OpenMemo API Server
 │
 ▼
-OpenMemo Memory Core
+OpenMemo Cognitive Memory Core
 ```
 
-## Features
+| Component | Role |
+|-----------|------|
+| OpenClaw Plugin | Hooks agent lifecycle |
+| Adapter | Memory orchestration |
+| OpenMemo API | Memory access interface |
+| Memory Core | Cognitive memory engine |
 
-- Scene-aware recall (coding, debug, deployment, research, file_analysis, web_search)
-- Recency-aware ranking: `semantic×0.6 + recency×0.25 + scene×0.15`
-- Conflict suppression (newer memory wins)
-- Async memory writes with retry + exponential backoff
-- Provider auto-fallback: library → local_api → cloud
-- Cold start handling (skip injection when memory empty)
-- Health check on init
-- Structured logging
+---
+
+## Memory Flow
+
+During each OpenClaw reasoning cycle:
+
+**1️⃣ Lifecycle events**
+
+- `on_user_message`
+- `on_agent_response`
+- `on_tool_call`
+- `on_task_complete`
+
+**2️⃣ Recall relevant memories**
+
+```
+POST /agent/context
+```
+
+**3️⃣ Inject memory into the prompt**
+
+```
+Relevant memory:
+1. User prefers Python backend
+2. User deploys applications using Docker
+```
+
+**4️⃣ Store new memories asynchronously**
+
+```
+POST /memory/write
+```
+
+Memory writes never block the agent loop.
+
+---
+
+## Key Features
+
+### Scene-Aware Memory
+
+Memories are tagged with scenes:
+
+- `coding`
+- `debug`
+- `deployment`
+- `research`
+- `web_search`
+
+When recalling memory, the adapter matches `query + scene`.
+
+Example:
+
+```
+query: deploy application
+scene: deployment
+→ Only deployment-related memories are returned.
+```
+
+### Intelligent Memory Ranking
+
+OpenMemo ranks memories using multiple signals:
+
+```
+semantic relevance
++ recency bias
++ scene matching
+```
+
+This avoids returning outdated memories.
+
+### Conflict Suppression
+
+Outdated preferences won't override current instructions.
+
+Example:
+
+```
+History memory:     User prefers Python
+Current instruction: Use Go
+→ OpenMemo suppresses the conflicting memory.
+```
+
+### Structured Cognitive Memory
+
+Instead of storing conversations:
+
+```
+User: deploy my app
+Agent: using docker
+```
+
+OpenMemo extracts memory cells:
+
+```
+User deploys applications using Docker
+User prefers Python backend
+User uses pytest for debugging
+```
+
+These are far more useful for reasoning.
+
+---
+
+## How OpenMemo Differs From Other Memory Systems
+
+| Feature | OpenClaw Default | Typical Memory Plugin | OpenMemo |
+|---------|-----------------|----------------------|----------|
+| Storage | JSONL / Markdown | Vector DB | Cognitive memory cells |
+| Retrieval | None | Semantic search | Scene-aware recall |
+| Ranking | None | Vector similarity | Semantic + recency + scene |
+| Conflict handling | No | Rare | Built-in suppression |
+| Memory structure | Unstructured logs | Flat facts | Contextual memories |
+| Agent awareness | No | Limited | Scene-aware |
+
+---
+
+## Installation
+
+Install the adapter:
+
+```bash
+pip install openmemo-openclaw
+```
+
+Install OpenMemo if needed:
+
+```bash
+pip install openmemo
+```
+
+---
+
+## Quick Start
+
+**Start the OpenMemo memory server:**
+
+```bash
+openmemo serve --port 8765
+```
+
+**Configure OpenClaw:**
+
+```yaml
+memory:
+  backend: openmemo
+  endpoint: http://localhost:8765
+```
+
+**Run OpenClaw normally:**
+
+```bash
+openclaw run
+```
+
+Your agent now uses OpenMemo as its memory backend.
+
+---
+
+## 3-Minute Demo
+
+Try OpenMemo with OpenClaw in under 3 minutes.
+
+**1. Install**
+
+```bash
+pip install openmemo
+pip install openmemo-openclaw
+```
+
+**2. Start memory server**
+
+```bash
+openmemo serve
+```
+
+**3. Run OpenClaw**
+
+```bash
+openclaw run
+```
+
+**4. Interact with the agent**
+
+```
+User: deploy my app
+```
+
+Later:
+
+```
+User: how should I deploy my backend?
+```
+
+OpenMemo recall:
+
+```
+Relevant memory:
+1. User deploys applications using Docker
+2. User prefers Python backend
+```
+
+Agent:
+
+```
+I'll deploy your Python backend using Docker.
+```
+
+---
+
+## Cold Start Handling
+
+When OpenMemo memory is empty (first install):
+
+```
+memory_context == []
+```
+
+The adapter skips memory injection to avoid prompt noise.
+
+---
+
+## Async Memory Write
+
+Memory writes are processed asynchronously.
+
+```
+event → async queue → memory worker → OpenMemo API
+```
+
+Retry strategy:
+
+```
+max_retry = 3
+backoff = exponential
+
+retry1 → 0.5s
+retry2 → 1.0s
+retry3 → 2.0s
+```
+
+---
+
+## Configuration
+
+Example configuration:
+
+```yaml
+memory:
+  backend: openmemo
+  endpoint: http://localhost:8765
+
+  injection_strategy: system    # system | user_prefix
+  conflict_policy: suppress
+
+  max_injected_items: 3
+```
+
+---
+
+## Developer Mode
+
+You can observe memory behavior in logs.
+
+```
+[openmemo] scene=deployment
+[openmemo] recall hits=2
+[openmemo] injecting memory
+[openmemo] queued memory write
+```
+
+This helps developers understand how memory influences agent reasoning.
+
+---
+
+## Roadmap
+
+| Version | Features |
+|---------|----------|
+| v2 | Multi-agent memory, shared memory pools |
+| v3 | Team knowledge bases, memory synchronization |
+| v4 | Memory governance, policy-based memory control |
+
+---
 
 ## License
 
-MIT
+Apache 2.0
+
+---
+
+**Built with [OpenMemo](https://github.com/openmemoai/openmemo) Cognitive Memory Engine.**
