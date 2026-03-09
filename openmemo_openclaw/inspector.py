@@ -34,7 +34,7 @@ class InspectorServer:
             return
         handler_class = _make_handler(self._adapter)
         try:
-            self._server = HTTPServer(("0.0.0.0", self._port), handler_class)
+            self._server = HTTPServer(("127.0.0.1", self._port), handler_class)
             self._thread = threading.Thread(
                 target=self._server.serve_forever,
                 daemon=True,
@@ -52,6 +52,9 @@ class InspectorServer:
     def stop(self):
         if self._server and self._running:
             self._server.shutdown()
+            self._server.server_close()
+            if self._thread:
+                self._thread.join(timeout=5)
             self._running = False
             logger.info("[openmemo] Inspector stopped")
 
@@ -73,7 +76,6 @@ def _make_handler(adapter):
             body = json.dumps(data).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -88,7 +90,6 @@ def _make_handler(adapter):
 
         def do_OPTIONS(self):
             self.send_response(204)
-            self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.end_headers()

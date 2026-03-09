@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openmemo-openclaw"
-version = "2.2.0"
+version = "2.3.0"
 description = "OpenMemo Cognitive Memory Adapter for OpenClaw Agents"
 readme = "README.md"
 requires-python = ">=3.9"
