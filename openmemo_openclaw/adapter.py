@@ -189,6 +189,9 @@ class OpenMemoAdapter:
 
     def pre_check(self, query: str, scene: str = "",
                   tools: list = None) -> PreCheckResult:
+        if not self._config.features.get("task_precheck", True):
+            return NO_MATCH
+
         effective_scene = scene or self._current_scene
         fingerprint = generate_fingerprint(
             scene=effective_scene,
@@ -231,10 +234,14 @@ class OpenMemoAdapter:
             limit=limit or self._config.recall_limit,
         )
 
+        conflict = self._config.conflict_policy
+        if not self._config.features.get("suppression", True):
+            conflict = "none"
+
         ranked = rank_memories(
             results,
             current_scene=effective_scene,
-            conflict_policy=self._config.conflict_policy,
+            conflict_policy=conflict,
         )
 
         return ranked[:self._config.max_injected_items]
