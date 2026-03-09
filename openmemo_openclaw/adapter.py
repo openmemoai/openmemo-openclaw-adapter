@@ -111,6 +111,15 @@ class OpenMemoAdapter:
         except Exception:
             pass
 
+        self._inspector = None
+        if self._config.features.get("inspector", True):
+            try:
+                from openmemo_openclaw.inspector import InspectorServer
+                self._inspector = InspectorServer(self, port=self._config.inspector_port)
+                self._inspector.start()
+            except Exception as e:
+                logger.warning("[openmemo] inspector failed to start: %s", e)
+
     async def start_async(self):
         if self._async_worker:
             await self._async_worker.start()
@@ -322,6 +331,8 @@ class OpenMemoAdapter:
         }
 
     def close(self):
+        if self._inspector:
+            self._inspector.stop()
         self._client.close()
         logger.info("[openmemo] adapter closed")
 

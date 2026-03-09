@@ -1,8 +1,9 @@
 """
-OpenMemo × OpenClaw Adapter v2.0
+OpenMemo × OpenClaw Adapter v2.3.0
 
 Automatic Cognitive Memory Infrastructure for OpenClaw Agents.
 install → run → memory works automatically.
+Now with built-in Memory Inspector Dashboard.
 """
 
 from openmemo_openclaw.adapter import OpenMemoAdapter
@@ -13,8 +14,9 @@ from openmemo_openclaw.pre_check import PreCheckResult
 from openmemo_openclaw.fingerprint import generate_fingerprint
 from openmemo_openclaw.task_extractor import TaskTracker
 from openmemo_openclaw.version_check import VersionInfo, check_version
+from openmemo_openclaw.inspector import InspectorServer
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 __all__ = [
     "OpenMemoAdapter",
     "OpenClawMemoryPlugin",
@@ -25,4 +27,5 @@ __all__ = [
     "TaskTracker",
     "VersionInfo",
     "check_version",
+    "InspectorServer",
 ]

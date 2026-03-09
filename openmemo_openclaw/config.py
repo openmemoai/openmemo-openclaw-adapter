@@ -48,6 +48,7 @@ class AdapterConfig:
     api_key: Optional[str] = None
 
     health_check: bool = True
+    inspector_port: int = 8780
 
     features: Dict[str, bool] = field(default_factory=lambda: dict(DEFAULT_FEATURES))
 
@@ -85,6 +86,7 @@ class AdapterConfig:
             cloud_url=memory.get("cloud_url", "https://api.openmemo.ai"),
             api_key=memory.get("api_key"),
             health_check=memory.get("health_check", True),
+            inspector_port=memory.get("inspector_port", 8780),
             features=merged_features,
         )
 
