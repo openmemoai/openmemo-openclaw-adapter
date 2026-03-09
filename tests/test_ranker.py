@@ -62,3 +62,21 @@ class TestRankMemories:
         assert 0 <= r["semantic_score"] <= 1.0
         assert 0 <= r["recency_score"] <= 1.0
         assert 0 <= r["scene_score"] <= 1.0
+        assert 0 <= r["task_score"] <= 1.0
+
+    def test_task_execution_gets_boost(self):
+        memories = [
+            {"content": "general observation", "score": 5.0, "memory_type": "observation"},
+            {"content": "task execution log", "score": 5.0, "memory_type": "task_execution"},
+        ]
+        ranked = rank_memories(memories)
+        assert ranked[0]["content"] == "task execution log"
+        assert ranked[0]["task_score"] > ranked[1]["task_score"]
+
+    def test_decision_memory_boost(self):
+        memories = [
+            {"content": "some fact", "score": 5.0, "memory_type": "observation"},
+            {"content": "deploy decision", "score": 5.0, "memory_type": "decision"},
+        ]
+        ranked = rank_memories(memories)
+        assert ranked[0]["task_score"] > ranked[1]["task_score"]

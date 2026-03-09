@@ -10,6 +10,8 @@ class TestAdapterConfig:
         assert config.persona_id == "default"
         assert config.injection_strategy == "system"
         assert config.conflict_policy == "suppress"
+        assert config.auto_write is True
+        assert config.auto_recall is True
         assert config.max_injected_items == 5
         assert config.max_memory_tokens == 200
         assert config.recall_limit == 5
@@ -51,12 +53,7 @@ class TestAdapterConfig:
         assert config.persona_id == "researcher"
 
     def test_from_dict_mode_alias(self):
-        data = {
-            "memory": {
-                "mode": "local_api",
-                "persona_id": "tester",
-            }
-        }
+        data = {"memory": {"mode": "local_api", "persona_id": "tester"}}
         config = AdapterConfig.from_dict(data)
         assert config.backend == "local_api"
 
@@ -82,3 +79,19 @@ class TestAdapterConfig:
         data = {"memory": {"health_check": False}}
         config = AdapterConfig.from_dict(data)
         assert config.health_check is False
+
+    def test_auto_write_from_dict(self):
+        data = {"memory": {"auto_write": False}}
+        config = AdapterConfig.from_dict(data)
+        assert config.auto_write is False
+
+    def test_auto_recall_from_dict(self):
+        data = {"memory": {"auto_recall": False}}
+        config = AdapterConfig.from_dict(data)
+        assert config.auto_recall is False
+
+    def test_auto_defaults_true(self):
+        data = {"memory": {"backend": "library"}}
+        config = AdapterConfig.from_dict(data)
+        assert config.auto_write is True
+        assert config.auto_recall is True

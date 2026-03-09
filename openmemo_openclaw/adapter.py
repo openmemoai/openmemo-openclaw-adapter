@@ -1,7 +1,11 @@
 """
-OpenMemo Adapter — main orchestrator for OpenClaw memory integration.
+OpenMemo Adapter v2.0 — Automatic Cognitive Memory & Task-Aware Execution.
 
-Coordinates: health check → transformer → scene mapper → async write → recall → ranker → injector
+Pipeline:
+  scene mapping → fingerprint → pre-check → recall → inject → agent decision →
+  tool execution → task memory extract → dual-layer async write
+
+Core principle: install → run → memory works automatically
 """
 
 import logging
@@ -22,30 +26,41 @@ from openmemo_openclaw.ranker import rank_memories
 from openmemo_openclaw.injector import inject_context, inject_into_messages, build_prompt
 from openmemo_openclaw.queue_worker import SyncMemoryWorker, AsyncMemoryWorker
 from openmemo_openclaw.health import run_health_check, HealthCheckError
+from openmemo_openclaw.fingerprint import generate_fingerprint, normalize_intent, fingerprint_from_event
+from openmemo_openclaw.task_extractor import TaskTracker, extract_task_memory
+from openmemo_openclaw.pre_check import PreTaskChecker, PreCheckResult, NO_MATCH
 
 logger = logging.getLogger("openmemo_openclaw")
+
+TASK_CHECK_TEMPLATE = """Task Memory Check:
+A similar task has been executed before.
+
+Previous result:
+- {summary}
+
+Status: {status}
+Recommended action: {action}"""
 
 
 class OpenMemoAdapter:
     """
     Main adapter class connecting OpenClaw to OpenMemo.
 
-    Usage (auto mode — recommended):
-        config = AdapterConfig(backend="auto")
-        adapter = OpenMemoAdapter(config)
+    v2.0: Automatic memory — install, run, memory works.
 
+    Usage (auto mode — recommended):
+        adapter = OpenMemoAdapter()
         adapter.on_user_message("deploy my app")
         messages = adapter.inject_context(messages, "deploy my app")
 
-    Usage with YAML config:
-        config = AdapterConfig.from_yaml("openclaw.memory.yaml")
-        adapter = OpenMemoAdapter(config)
+    Pre-task check (avoid duplicate execution):
+        result = adapter.pre_check("deploy my app")
+        if result.matched and result.recommended_action == "reuse_or_skip":
+            print("Task already done:", result.previous_summary)
 
-    Async mode (recommended for agent loops):
-        adapter = OpenMemoAdapter(config, async_mode=True)
+    Async mode:
+        adapter = OpenMemoAdapter(async_mode=True)
         await adapter.start_async()
-        adapter.on_user_message("deploy my app")
-        await adapter.stop_async()
     """
 
     def __init__(self, config: AdapterConfig = None, async_mode: bool = False):
@@ -56,6 +71,7 @@ class OpenMemoAdapter:
         self._current_task_id = ""
         self._current_scene = ""
         self._current_files: list = []
+        self._task_tracker = TaskTracker()
 
         if self._config.health_check and self._config.backend != "library":
             try:
@@ -65,6 +81,7 @@ class OpenMemoAdapter:
                 logger.warning("[openmemo] %s", e)
 
         self._client = MemoryClient(self._config)
+        self._pre_checker = PreTaskChecker(self._client)
 
         if async_mode:
             self._async_worker = AsyncMemoryWorker(
@@ -84,8 +101,9 @@ class OpenMemoAdapter:
         if self._config.scene_override:
             self._scene_mapper.scene_override(self._config.scene_override)
 
-        logger.info("[openmemo] adapter initialized (backend=%s, mode=%s)",
-                    self._config.backend, "async" if async_mode else "sync")
+        logger.info("[openmemo] adapter v2.0 initialized (backend=%s, mode=%s, auto_write=%s, auto_recall=%s)",
+                    self._config.backend, "async" if async_mode else "sync",
+                    self._config.auto_write, self._config.auto_recall)
 
     async def start_async(self):
         if self._async_worker:
@@ -102,6 +120,7 @@ class OpenMemoAdapter:
 
     def set_task(self, task_id: str):
         self._current_task_id = task_id
+        self._task_tracker.reset()
 
     def set_files(self, file_paths: list):
         self._current_files = file_paths or []
@@ -114,12 +133,14 @@ class OpenMemoAdapter:
         self._scene_mapper.clear_override()
 
     def on_user_message(self, message: str, task_id: str = ""):
+        self._task_tracker.set_user_request(message)
+
         event = transform_user_message(
             message,
             session_id=self._session_id,
             task_id=task_id or self._current_task_id,
         )
-        if event:
+        if event and self._config.auto_write:
             self._process_event(event)
 
     def on_agent_response(self, response: str, tools: list = None,
@@ -130,33 +151,61 @@ class OpenMemoAdapter:
             session_id=self._session_id,
             task_id=task_id or self._current_task_id,
         )
-        if event:
+        if event and self._config.auto_write:
             self._process_event(event)
 
     def on_tool_call(self, tool_name: str, tool_output: str = "",
                      task_id: str = ""):
+        self._task_tracker.add_tool_call(tool_name, tool_output)
+
         event = transform_tool_call(
             tool_name,
             tool_output,
             session_id=self._session_id,
             task_id=task_id or self._current_task_id,
         )
-        if event:
+        if event and self._config.auto_write:
             self._process_event(event)
 
     def on_task_complete(self, summary: str, tools: list = None,
-                         task_id: str = ""):
+                         task_id: str = "", status: str = "success"):
         event = transform_task_complete(
             summary,
             tools=tools,
             session_id=self._session_id,
             task_id=task_id or self._current_task_id,
         )
-        if event:
+        if event and self._config.auto_write:
             self._process_event(event)
+
+        if self._task_tracker.has_data:
+            self._write_task_memory(summary, status=status)
+
+    def pre_check(self, query: str, scene: str = "",
+                  tools: list = None) -> PreCheckResult:
+        effective_scene = scene or self._current_scene
+        fingerprint = generate_fingerprint(
+            scene=effective_scene,
+            intent=query,
+            tools=tools,
+        )
+
+        if not fingerprint:
+            return NO_MATCH
+
+        result = self._pre_checker.check(
+            fingerprint=fingerprint,
+            query=query,
+            scene=effective_scene,
+        )
+
+        return result
 
     def recall(self, query: str, scene: str = "",
                limit: int = None) -> List[str]:
+        if not self._config.auto_recall:
+            return []
+
         effective_scene = scene or self._current_scene
         memories = self._client.recall_context(
             query=query,
@@ -185,8 +234,22 @@ class OpenMemoAdapter:
         return ranked[:self._config.max_injected_items]
 
     def inject_context(self, messages: List[dict], query: str,
-                       scene: str = "") -> List[dict]:
+                       scene: str = "",
+                       include_pre_check: bool = True) -> List[dict]:
         memories = self.recall(query, scene=scene)
+
+        if include_pre_check:
+            check_result = self.pre_check(query, scene=scene)
+            if check_result.matched:
+                task_context = TASK_CHECK_TEMPLATE.format(
+                    summary=check_result.previous_summary,
+                    status=check_result.task_status,
+                    action=check_result.recommended_action,
+                )
+                memories = [task_context] + memories
+                logger.info("[openmemo] pre-check injected: action=%s",
+                            check_result.recommended_action)
+
         if not memories:
             logger.debug("[openmemo] cold start, no memories to inject")
             return messages
@@ -240,6 +303,8 @@ class OpenMemoAdapter:
             "session_id": self._session_id,
             "current_scene": self._current_scene,
             "async_mode": self._async_mode,
+            "auto_write": self._config.auto_write,
+            "auto_recall": self._config.auto_recall,
             "worker_stats": worker_stats,
         }
 
@@ -257,11 +322,16 @@ class OpenMemoAdapter:
         scene = self._detect_scene(event)
         self._current_scene = scene
 
+        self._task_tracker.set_scene(scene)
+
         content = extract_memory_content(event)
         if not content:
             return
 
         memory_type = infer_memory_type(event)
+
+        fp = fingerprint_from_event(event, scene)
+        self._task_tracker.set_fingerprint(fp)
 
         payload = {
             "content": content,
@@ -271,12 +341,48 @@ class OpenMemoAdapter:
                 "task_id": event.get("task_id", ""),
                 "session_id": event.get("session_id", ""),
                 "event_type": event.get("type", ""),
+                "task_fingerprint": fp,
             },
         }
 
         logger.info("[openmemo] scene=%s type=%s queued_write content=%r",
                     scene, memory_type, content[:60])
 
+        self._enqueue_write(payload)
+
+    def _write_task_memory(self, task_result: str, status: str = "success"):
+        task_mem = self._task_tracker.extract(
+            task_result=task_result,
+            status=status,
+        )
+
+        content = (
+            f"Task: {task_mem['task_name']} | "
+            f"Fingerprint: {task_mem['task_fingerprint']} | "
+            f"Status: {task_mem['status']} | "
+            f"Summary: {task_mem['summary']}"
+        )
+
+        payload = {
+            "content": content,
+            "scene": task_mem.get("scene", ""),
+            "memory_type": "task_execution",
+            "metadata": {
+                "task_name": task_mem.get("task_name", ""),
+                "task_fingerprint": task_mem.get("task_fingerprint", ""),
+                "status": task_mem.get("status", ""),
+                "tools_used": task_mem.get("tools_used", []),
+                "user_request": task_mem.get("user_request", ""),
+            },
+        }
+
+        logger.info("[openmemo] task_memory: name=%s fp=%s status=%s",
+                    task_mem.get("task_name"), task_mem.get("task_fingerprint"), status)
+
+        self._enqueue_write(payload)
+        self._task_tracker.reset()
+
+    def _enqueue_write(self, payload: dict):
         if self._async_mode and self._async_worker:
             self._async_worker.enqueue_sync(payload)
         elif self._sync_worker:

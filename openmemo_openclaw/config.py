@@ -6,6 +6,8 @@ Supports three modes:
   - local_api: force local API server
   - library: direct SDK (no server needed)
   - cloud: force cloud API
+
+v2.0: auto_write and auto_recall enabled by default.
 """
 
 from dataclasses import dataclass, field
@@ -22,6 +24,9 @@ class AdapterConfig:
 
     injection_strategy: str = "system"
     conflict_policy: str = "suppress"
+
+    auto_write: bool = True
+    auto_recall: bool = True
 
     max_injected_items: int = 5
     max_memory_tokens: int = 200
@@ -56,6 +61,8 @@ class AdapterConfig:
             instance_id=memory.get("instance_id", ""),
             injection_strategy=memory.get("injection_strategy", "system"),
             conflict_policy=memory.get("conflict_policy", "suppress"),
+            auto_write=memory.get("auto_write", True),
+            auto_recall=memory.get("auto_recall", True),
             max_injected_items=memory.get("max_injected_items", 5),
             max_memory_tokens=memory.get("max_memory_tokens", 200),
             recall_limit=memory.get("recall_limit", 5),
