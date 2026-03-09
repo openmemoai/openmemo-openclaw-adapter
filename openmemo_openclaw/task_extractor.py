@@ -130,5 +130,9 @@ class TaskTracker:
         self._fingerprint = ""
 
     @property
+    def fingerprint(self) -> str:
+        return self._fingerprint
+
+    @property
     def has_data(self) -> bool:
         return bool(self._user_request or self._tool_trace)

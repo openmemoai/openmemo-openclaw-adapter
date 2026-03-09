@@ -331,7 +331,8 @@ class OpenMemoAdapter:
         memory_type = infer_memory_type(event)
 
         fp = fingerprint_from_event(event, scene)
-        self._task_tracker.set_fingerprint(fp)
+        if not self._task_tracker.fingerprint:
+            self._task_tracker.set_fingerprint(fp)
 
         payload = {
             "content": content,
