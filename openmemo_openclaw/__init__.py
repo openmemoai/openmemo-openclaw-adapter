@@ -12,8 +12,9 @@ from openmemo_openclaw.health import HealthCheckError
 from openmemo_openclaw.pre_check import PreCheckResult
 from openmemo_openclaw.fingerprint import generate_fingerprint
 from openmemo_openclaw.task_extractor import TaskTracker
+from openmemo_openclaw.version_check import VersionInfo, check_version
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __all__ = [
     "OpenMemoAdapter",
     "OpenClawMemoryPlugin",
@@ -22,4 +23,6 @@ __all__ = [
     "PreCheckResult",
     "generate_fingerprint",
     "TaskTracker",
+    "VersionInfo",
+    "check_version",
 ]

@@ -29,6 +29,7 @@ from openmemo_openclaw.health import run_health_check, HealthCheckError
 from openmemo_openclaw.fingerprint import generate_fingerprint, normalize_intent, fingerprint_from_event
 from openmemo_openclaw.task_extractor import TaskTracker, extract_task_memory
 from openmemo_openclaw.pre_check import PreTaskChecker, PreCheckResult, NO_MATCH
+from openmemo_openclaw.version_check import check_version, log_version_status
 
 logger = logging.getLogger("openmemo_openclaw")
 
@@ -104,6 +105,11 @@ class OpenMemoAdapter:
         logger.info("[openmemo] adapter v2.0 initialized (backend=%s, mode=%s, auto_write=%s, auto_recall=%s)",
                     self._config.backend, "async" if async_mode else "sync",
                     self._config.auto_write, self._config.auto_recall)
+
+        try:
+            log_version_status()
+        except Exception:
+            pass
 
     async def start_async(self):
         if self._async_worker:

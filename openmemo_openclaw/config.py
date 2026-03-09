@@ -11,7 +11,13 @@ v2.0: auto_write and auto_recall enabled by default.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Dict, Optional
+
+DEFAULT_FEATURES: Dict[str, bool] = {
+    "inspector": True,
+    "task_precheck": True,
+    "suppression": True,
+}
 
 
 @dataclass
@@ -43,6 +49,8 @@ class AdapterConfig:
 
     health_check: bool = True
 
+    features: Dict[str, bool] = field(default_factory=lambda: dict(DEFAULT_FEATURES))
+
     @property
     def namespace(self) -> str:
         return f"{self.agent_platform}/{self.persona_id}"
@@ -53,6 +61,10 @@ class AdapterConfig:
         mode = memory.get("mode", memory.get("backend", "auto"))
         if mode == "cloud":
             mode = "cloud_api"
+        merged_features = dict(DEFAULT_FEATURES)
+        raw_features = memory.get("features", {})
+        if isinstance(raw_features, dict):
+            merged_features.update(raw_features)
         return cls(
             backend=mode,
             endpoint=memory.get("endpoint", "http://localhost:8765"),
@@ -73,6 +85,7 @@ class AdapterConfig:
             cloud_url=memory.get("cloud_url", "https://api.openmemo.ai"),
             api_key=memory.get("api_key"),
             health_check=memory.get("health_check", True),
+            features=merged_features,
         )
 
     @classmethod
