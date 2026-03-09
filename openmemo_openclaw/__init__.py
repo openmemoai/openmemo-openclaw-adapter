@@ -14,7 +14,7 @@ from openmemo_openclaw.fingerprint import generate_fingerprint
 from openmemo_openclaw.task_extractor import TaskTracker
 from openmemo_openclaw.version_check import VersionInfo, check_version
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 __all__ = [
     "OpenMemoAdapter",
     "OpenClawMemoryPlugin",
