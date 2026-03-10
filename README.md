@@ -1,452 +1,355 @@
 # OpenMemo × OpenClaw Adapter
 
-**Cognitive Memory Infrastructure for OpenClaw Agents**
+**Turn OpenClaw Agents into Persistent, Memory-Driven Collaborators**
 
-OpenMemo turns OpenClaw from a stateless agent into a memory-driven collaborator.
+Most AI agents today are stateless.
 
-Instead of storing raw conversation logs, OpenMemo builds structured cognitive memories that agents can recall intelligently during reasoning.
+They forget:
+- what tasks they already completed
+- what decisions were made
+- what tools worked before
+- what the user prefers
 
-> Repository name: `openmemo-openclaw-adapter`
-> PyPI package name: `openmemo-openclaw`
+So they repeat work. They redo the same tasks. They waste tokens and time.
 
-⭐ If you find this useful, please give the repo a star.
+**OpenMemo fixes this.**
 
----
+OpenMemo adds a persistent memory layer to OpenClaw that allows agents to:
+- remember past actions
+- reuse successful workflows
+- avoid duplicate work
+- accumulate long-term knowledge
 
-## Requirements
-
-- Python 3.9+
-- OpenClaw
-- OpenMemo
-
-> Note: Python 3.6 / 3.7 / 3.8 are **not** supported.
-
----
-
-## Installation
-
-Make sure your Python version is 3.9 or newer:
-
-```bash
-python --version
-```
-
-Install OpenMemo:
-
-```bash
-pip install openmemo
-```
-
-Install the OpenClaw adapter:
-
-```bash
-pip install openmemo-openclaw
-```
+After installing OpenMemo, your OpenClaw agents stop behaving like stateless chatbots and start behaving like **long-term collaborators**.
 
 ---
 
-## Overview
+## What OpenMemo Adds to OpenClaw
 
-OpenClaw ships with basic memory mechanisms such as:
+Installing the adapter enables:
 
-- `session.jsonl`
-- `memory.md`
-- `soul.md`
-
-These are useful for storing conversation history, but they are not designed for long-term cognitive memory.
-
-Typical limitations:
-
-- Session logs grow indefinitely
-- Context compression causes information loss
-- Markdown memory is unstructured
-- Retrieval lacks task awareness
-
-**OpenMemo solves this by introducing cognitive memory infrastructure for agents.**
-
-Instead of storing conversations, OpenMemo creates structured memory cells about user behavior, workflows, and decisions.
-
----
-
-## Why OpenMemo?
-
-Most agent memory systems store chat history.
-
-**OpenMemo stores cognitive memory.**
+### Persistent Memory
 
 Agents remember:
+- preferences
+- past tasks
+- decisions
+- workflows
+- observations
 
-- User preferences
-- Successful workflows
-- Deployment habits
-- Debugging strategies
-- Decision patterns
+Example memory:
 
-This enables agents to behave like persistent collaborators, not stateless chatbots.
+```
+User switched from Flask to FastAPI
+Scene: coding
+Type: decision
+Confidence: 0.92
+```
+
+### Task Deduplication
+
+Before executing a task, OpenMemo checks whether it has already been done.
+
+```
+task: deploy backend
+fingerprint: deployment|backend|docker-compose
+status: success
+```
+
+If the task was already completed, the agent can **reuse**, **skip**, or **continue** — instead of repeating work.
+
+### Scene-Aware Memory
+
+OpenMemo detects the current working scene:
+- `coding`
+- `debugging`
+- `research`
+- `deployment`
+- `analysis`
+
+and retrieves only the most relevant memories.
+
+### Structured Knowledge
+
+OpenMemo stores atomic memory cells, not raw chat logs.
+
+Instead of:
+> long messy conversation history
+
+it stores:
+
+```
+"Backend deployed using Docker Compose"
+Scene: deployment
+Type: task_execution
+```
+
+This dramatically improves recall quality.
+
+### Automatic Memory
+
+OpenMemo automatically extracts memory from:
+- conversations
+- tool calls
+- task completions
+- decision changes
+
+No manual tagging required.
+
+### Memory Inspector
+
+OpenMemo includes a visual dashboard where you can see:
+- what the agent remembers
+- how memory is ranked
+- how much token cost is saved
+
+---
+
+## Why This Matters
+
+Modern agent frameworks like OpenClaw, LangGraph, CrewAI, and AutoGPT are enabling developers to build increasingly complex AI workflows.
+
+But most agents still rely on short-term chat context. That means:
+- no long-term learning
+- no task reuse
+- no accumulated experience
+
+**OpenMemo introduces a memory infrastructure layer designed specifically for agents.**
 
 ---
 
 ## Architecture
 
-OpenMemo integrates with OpenClaw through a lightweight adapter layer.
+OpenMemo sits between the agent and the LLM.
 
 ```
-OpenClaw Agent
-│
-▼
-OpenClaw Plugin (Lifecycle Hooks)
-│
-▼
-OpenMemo Adapter
-│
-├── Memory Recall
-└── Async Memory Write
-│
-▼
-OpenMemo API Server
-│
-▼
-OpenMemo Cognitive Memory Core
+User / Agent Interaction
+        │
+        ▼
+   Memory Capture
+   (conversation, tool calls, tasks)
+        │
+        ▼
+  OpenMemo Memory Engine
+        │
+  ┌─────┼─────┐
+  │     │     │
+Recall Ranking Dedup
+  │     │     │
+  └─────┴─────┘
+        │
+        ▼
+  Context Injection
+        │
+        ▼
+   LLM Reasoning
 ```
 
-| Component | Role |
-|-----------|------|
-| OpenClaw Plugin | Hooks agent lifecycle |
-| Adapter | Memory orchestration |
-| OpenMemo API | Memory access interface |
-| Memory Core | Cognitive memory engine |
+### Local-First Design
+
+OpenMemo is local-first by default. All memory operations run locally.
+
+```
+Agent
+  ↓
+OpenMemo Local Server
+  ↓
+Memory Store
+```
+
+Cloud services are optional.
+
+Benefits:
+- **Privacy** — all data stays local
+- **Low latency** — no network round trips
+- **No external dependencies** — works offline
 
 ---
 
-## Memory Flow
+## Automatic Memory Rules
 
-During each OpenClaw reasoning cycle:
+Installing OpenMemo also activates **Memory Rules**.
 
-**1️⃣ Lifecycle events**
+These rules guide the agent to properly use memory:
 
-- `on_user_message`
-- `on_agent_response`
-- `on_tool_call`
-- `on_task_complete`
+1. Prefer OpenMemo memory over raw conversation history.
+2. Before executing any task, check if the task was already completed.
+3. If a task already succeeded, reuse or skip it.
+4. After meaningful task completion, write structured memory back to OpenMemo.
 
-**2️⃣ Recall relevant memories**
-
-```
-POST /agent/context
-```
-
-**3️⃣ Inject memory into the prompt**
-
-```
-Relevant memory:
-1. User prefers Python backend
-2. User deploys applications using Docker
-```
-
-**4️⃣ Store new memories asynchronously**
-
-```
-POST /memory/write
-```
-
-Memory writes never block the agent loop.
+These rules are injected through a **merged soul context**, ensuring consistent memory behavior.
 
 ---
 
-## Key Features
+## Memory Inspector
 
-### Scene-Aware Memory
+OpenMemo includes a built-in **Memory Inspector Dashboard**.
 
-Memories are tagged with scenes:
+The inspector shows:
 
-- `coding`
-- `debug`
-- `deployment`
-- `research`
-- `web_search`
+| Metric | Description |
+|--------|-------------|
+| Memory Cells | Total structured memories stored |
+| Tokens Saved | Token cost reduction from memory reuse |
+| Recall Confidence | Quality score of memory retrieval |
+| System Status | Health of memory infrastructure |
+| Scene Dynamics | Current detected scene and confidence |
 
-When recalling memory, the adapter matches `query + scene`.
+Users can override the detected scene if needed.
 
-Example:
+### Memory Stream
 
-```
-query: deploy application
-scene: deployment
-→ Only deployment-related memories are returned.
-```
-
-### Intelligent Memory Ranking
-
-OpenMemo ranks memories using multiple signals:
+Real-time memory entries with ranking:
 
 ```
-semantic relevance
-+ recency bias
-+ scene matching
+User switched from Flask to FastAPI
+Scene: coding
+Rank Score: 0.92
 ```
 
-This avoids returning outdated memories.
-
-### Conflict Suppression
-
-Outdated preferences won't override current instructions.
-
-Example:
-
-```
-History memory:     User prefers Python
-Current instruction: Use Go
-→ OpenMemo suppresses the conflicting memory.
-```
-
-### Structured Cognitive Memory
-
-Instead of storing conversations:
-
-```
-User: deploy my app
-Agent: using docker
-```
-
-OpenMemo extracts memory cells:
-
-```
-User deploys applications using Docker
-User prefers Python backend
-User uses pytest for debugging
-```
-
-These are far more useful for reasoning.
+This makes the memory system **transparent and explainable**.
 
 ---
 
-## How OpenMemo Differs From Other Memory Systems
+## Example Workflows
 
-| Feature | OpenClaw Default | Typical Memory Plugin | OpenMemo |
-|---------|-----------------|----------------------|----------|
-| Storage | JSONL / Markdown | Vector DB | Cognitive memory cells |
-| Retrieval | None | Semantic search | Scene-aware recall |
-| Ranking | None | Vector similarity | Semantic + recency + scene |
-| Conflict handling | No | Rare | Built-in suppression |
-| Memory structure | Unstructured logs | Flat facts | Contextual memories |
-| Agent awareness | No | Limited | Scene-aware |
+### Coding Agent
+
+**Without OpenMemo:**
+
+```
+User: deploy backend
+Agent: builds image → deploys
+
+(later...)
+
+User: deploy backend again
+Agent: repeats everything from scratch
+```
+
+**With OpenMemo:**
+
+```
+User: deploy backend
+Agent: deploys using Docker Compose → memory stored
+
+(later...)
+
+User: deploy backend again
+Agent: detects prior deployment → reuses workflow
+```
+
+### Research Agent
+
+Agent remembers:
+> User prefers academic papers over blog posts
+
+Future research queries prioritize papers automatically.
+
+### DevOps Agent
+
+Agent remembers:
+> Production deployments use Kubernetes
+
+Future deployment tasks follow the correct workflow automatically.
 
 ---
 
-## Quick Start
+## Multi-Agent Memory (Upcoming)
 
-**Start the OpenMemo memory server:**
+OpenMemo also enables collaborative memory for multi-agent systems.
+
+Memory is organized into three layers:
+
+### Private Memory
+
+Per-agent knowledge.
+
+```
+planner_agent/private
+coder_agent/private
+```
+
+### Shared Task Memory
+
+Agents working on the same task share memory.
+
+```
+task_123/shared
+```
+
+Stores: task goals, completed steps, execution results.
+
+### Team Knowledge Memory
+
+Long-term shared knowledge.
+
+```
+team/default
+```
+
+Stores: project conventions, reusable workflows.
+
+---
+
+## What Makes OpenMemo Different
+
+| Feature | Chat History | RAG | **OpenMemo** |
+|---------|-------------|-----|-------------|
+| Persistent Memory | ❌ | ❌ | ✅ |
+| Task Deduplication | ❌ | ❌ | ✅ |
+| Scene Awareness | ❌ | ❌ | ✅ |
+| Decision Tracking | ❌ | ❌ | ✅ |
+| Memory Inspector | ❌ | ❌ | ✅ |
+
+**OpenMemo is not just memory storage. It is agent memory infrastructure.**
+
+---
+
+## Installation
+
+Install the adapter:
 
 ```bash
-openmemo serve --port 8765
-```
-
-**Configure OpenClaw:**
-
-```yaml
-memory:
-  backend: openmemo
-  endpoint: http://localhost:8765
-```
-
-**Run OpenClaw normally:**
-
-```bash
-openclaw run
-```
-
-Your agent now uses OpenMemo as its memory backend.
-
----
-
-## 3-Minute Demo
-
-Try OpenMemo with OpenClaw in under 3 minutes.
-
-**1. Install**
-
-```bash
-pip install openmemo
 pip install openmemo-openclaw
 ```
 
-**2. Start memory server**
+Start OpenMemo:
 
 ```bash
 openmemo serve
 ```
 
-**3. Run OpenClaw**
-
-```bash
-openclaw run
-```
-
-**4. Interact with the agent**
-
-```
-User: deploy my app
-```
-
-Later:
-
-```
-User: how should I deploy my backend?
-```
-
-OpenMemo recall:
-
-```
-Relevant memory:
-1. User deploys applications using Docker
-2. User prefers Python backend
-```
-
-Agent:
-
-```
-I'll deploy your Python backend using Docker.
-```
+Run OpenClaw normally. Memory and recall will start automatically.
 
 ---
 
-## Cold Start Handling
+## Vision
 
-When OpenMemo memory is empty (first install):
+We believe future software will be built around persistent AI agents.
 
-```
-memory_context == []
-```
+These agents need:
+- long-term memory
+- shared knowledge
+- explainable reasoning
+- reusable workflows
 
-The adapter skips memory injection to avoid prompt noise.
-
----
-
-## Async Memory Write
-
-Memory writes are processed asynchronously.
-
-```
-event → async queue → memory worker → OpenMemo API
-```
-
-Retry strategy:
-
-```
-max_retry = 3
-backoff = exponential
-
-retry1 → 0.5s
-retry2 → 1.0s
-retry3 → 2.0s
-```
+**OpenMemo is building the memory infrastructure for AI agents.**
 
 ---
 
-## Configuration
+## Contributing
 
-Example configuration:
+We welcome contributions from the community.
 
-```yaml
-memory:
-  backend: openmemo
-  endpoint: http://localhost:8765
-
-  injection_strategy: system    # system | user_prefix
-  conflict_policy: suppress
-
-  max_injected_items: 3
-```
-
----
-
-## Developer Mode
-
-You can observe memory behavior in logs.
-
-```
-[openmemo] scene=deployment
-[openmemo] recall hits=2
-[openmemo] injecting memory
-[openmemo] queued memory write
-```
-
-This helps developers understand how memory influences agent reasoning.
-
----
-
-## Troubleshooting
-
-### Python version not supported
-
-If you see:
-
-```
-Requires Python 3.9+, but your version is 3.6.8
-```
-
-Upgrade Python first, then reinstall:
-
-```bash
-python --version
-pip install --upgrade pip
-pip install openmemo-openclaw
-```
-
-### Package not found
-
-The PyPI package name is `openmemo-openclaw`, **not** `openmemo-openclaw-adapter`.
-
-```bash
-# Correct
-pip install openmemo-openclaw
-
-# Wrong
-pip install openmemo-openclaw-adapter
-```
-
-If you use a regional PyPI mirror that hasn't synced yet, try the official source:
-
-```bash
-pip install openmemo-openclaw -i https://pypi.org/simple/
-```
-
-Or install directly from GitHub:
-
-```bash
-pip install git+https://github.com/openmemoai/openmemo-openclaw-adapter.git
-```
-
-### OpenMemo server not running
-
-If you see:
-
-```
-OpenMemo backend unavailable: cannot connect to http://127.0.0.1:8765
-```
-
-Start the OpenMemo server first:
-
-```bash
-openmemo serve --port 8765
-```
-
----
-
-## Roadmap
-
-| Version | Features |
-|---------|----------|
-| v2 | Multi-agent memory, shared memory pools |
-| v3 | Team knowledge bases, memory synchronization |
-| v4 | Memory governance, policy-based memory control |
+If you're interested in building the future of agent memory infrastructure, join us.
 
 ---
 
 ## License
 
-Apache 2.0
+MIT
 
 ---
 
-**Built with [OpenMemo](https://github.com/openmemoai/openmemo) Cognitive Memory Engine.**
+**Built with [OpenMemo](https://github.com/openmemoai/openmemo) — The Memory Infrastructure for AI Agents.**
