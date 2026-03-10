@@ -30,6 +30,8 @@ from openmemo_openclaw.fingerprint import generate_fingerprint, normalize_intent
 from openmemo_openclaw.task_extractor import TaskTracker, extract_task_memory
 from openmemo_openclaw.pre_check import PreTaskChecker, PreCheckResult, NO_MATCH
 from openmemo_openclaw.version_check import check_version, log_version_status
+from openmemo_openclaw.memory_rules import MemoryRulesEngine, load_rules
+from openmemo_openclaw.soul_merger import merge_into_messages, merge_soul
 
 logger = logging.getLogger("openmemo_openclaw")
 
@@ -110,6 +112,12 @@ class OpenMemoAdapter:
             log_version_status()
         except Exception:
             pass
+
+        self._rules_engine = load_rules(self._config)
+        if self._rules_engine.enabled:
+            logger.info("[openmemo] memory rules active (version=%s, mode=%s, rules=%d)",
+                        self._rules_engine.version, self._config.memory_rules_mode,
+                        self._rules_engine.rule_count)
 
         self._inspector = None
         if self._config.features.get("inspector", True):
@@ -258,6 +266,12 @@ class OpenMemoAdapter:
     def inject_context(self, messages: List[dict], query: str,
                        scene: str = "",
                        include_pre_check: bool = True) -> List[dict]:
+        result = list(messages)
+
+        if (self._rules_engine.enabled and
+                self._config.memory_rules_mode == "merged_soul"):
+            result = merge_into_messages(result, self._rules_engine.rules_text)
+
         memories = self.recall(query, scene=scene)
 
         if include_pre_check:
@@ -274,10 +288,10 @@ class OpenMemoAdapter:
 
         if not memories:
             logger.debug("[openmemo] cold start, no memories to inject")
-            return messages
+            return result
 
         return inject_into_messages(
-            messages,
+            result,
             memories,
             strategy=self._config.injection_strategy,
             max_items=self._config.max_injected_items,
@@ -301,8 +315,13 @@ class OpenMemoAdapter:
         effective_query = query or user_prompt
         memories = self.recall(effective_query, scene=scene)
 
+        prompt = user_prompt
+        if (self._rules_engine.enabled and
+                self._config.memory_rules_mode == "merged_soul"):
+            prompt = merge_soul(prompt, self._rules_engine.rules_text)
+
         return build_prompt(
-            original_prompt=user_prompt,
+            original_prompt=prompt,
             memory_context=memories,
             strategy=self._config.injection_strategy,
             max_items=self._config.max_injected_items,
@@ -311,6 +330,10 @@ class OpenMemoAdapter:
 
     def list_scenes(self) -> List[str]:
         return self._client.list_scenes()
+
+    @property
+    def memory_rules(self) -> MemoryRulesEngine:
+        return self._rules_engine
 
     @property
     def stats(self) -> dict:
@@ -328,6 +351,7 @@ class OpenMemoAdapter:
             "auto_write": self._config.auto_write,
             "auto_recall": self._config.auto_recall,
             "worker_stats": worker_stats,
+            "memory_rules": self._rules_engine.status,
         }
 
     def close(self):

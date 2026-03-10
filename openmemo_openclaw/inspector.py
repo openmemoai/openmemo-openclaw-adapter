@@ -112,6 +112,8 @@ def _make_handler(adapter):
             elif path == "/api/inspector/search":
                 q = qs.get("q", [""])[0]
                 self._serve_search(q)
+            elif path == "/api/inspector/rules":
+                self._serve_rules()
             elif path == "/version":
                 self._serve_version()
             else:
@@ -166,6 +168,12 @@ def _make_handler(adapter):
             checks.append({
                 "name": "Conflict Suppression",
                 "status": "ok" if feat.get("suppression", True) else "warning",
+            })
+
+            mr = adapter.memory_rules if hasattr(adapter, "memory_rules") else None
+            checks.append({
+                "name": "Memory Rules",
+                "status": "ok" if mr and mr.enabled else "warning",
             })
 
             overall = "ok"
@@ -293,6 +301,28 @@ def _make_handler(adapter):
                 pass
 
             self._send_json({"results": results})
+
+        def _serve_rules(self):
+            rules = adapter.memory_rules if hasattr(adapter, "memory_rules") else None
+            if rules:
+                status = rules.status
+                self._send_json({
+                    "enabled": status["enabled"],
+                    "version": status["version"],
+                    "mode": adapter._config.memory_rules_mode,
+                    "rule_count": status["rule_count"],
+                    "custom_rules": status["custom_rules"],
+                    "rules_text": rules.rules_text if status["enabled"] else "",
+                })
+            else:
+                self._send_json({
+                    "enabled": False,
+                    "version": "0",
+                    "mode": "disabled",
+                    "rule_count": 0,
+                    "custom_rules": 0,
+                    "rules_text": "",
+                })
 
         def _serve_version(self):
             versions = get_local_versions()

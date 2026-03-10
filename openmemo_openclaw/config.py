@@ -50,6 +50,11 @@ class AdapterConfig:
     health_check: bool = True
     inspector_port: int = 8780
 
+    auto_memory_rules: bool = True
+    memory_rules_mode: str = "merged_soul"
+    rules_version: str = "1.0"
+    rules_file: Optional[str] = None
+
     features: Dict[str, bool] = field(default_factory=lambda: dict(DEFAULT_FEATURES))
 
     @property
@@ -87,6 +92,10 @@ class AdapterConfig:
             api_key=memory.get("api_key"),
             health_check=memory.get("health_check", True),
             inspector_port=memory.get("inspector_port", 8780),
+            auto_memory_rules=memory.get("auto_memory_rules", True),
+            memory_rules_mode=memory.get("memory_rules_mode", "merged_soul"),
+            rules_version=memory.get("rules_version", "1.0"),
+            rules_file=memory.get("rules_file"),
             features=merged_features,
         )
 

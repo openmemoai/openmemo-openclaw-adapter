@@ -98,7 +98,13 @@ class TestAdapter:
     def test_inject_context_cold_start(self, adapter):
         messages = [{"role": "user", "content": "hello"}]
         result = adapter.inject_context(messages, query="hello")
-        assert result == messages
+        if adapter.memory_rules.enabled:
+            assert len(result) == 2
+            assert result[0]["role"] == "system"
+            assert "OpenMemo Memory Rules" in result[0]["content"]
+            assert result[1]["content"] == "hello"
+        else:
+            assert result == messages
 
     def test_inject_context_with_memory(self, adapter):
         adapter.on_user_message("User prefers Python backend")
