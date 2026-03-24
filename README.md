@@ -346,6 +346,8 @@ Stores: project conventions, reusable workflows.
 
   ### ✅ Option 1: Install via ClawHub (Recommended)
 
+  📦 ClawHub page: [clawhub.ai/openmemoai/openmemo-clawhub-skill](https://clawhub.ai/openmemoai/openmemo-clawhub-skill)
+
   ```bash
   npx clawhub@latest install openmemo-clawhub-skill
   ```
@@ -362,9 +364,11 @@ Stores: project conventions, reusable workflows.
 
   ### ✅ Option 2: Manual Install (Plugin Mode)
 
+  📂 Source: [github.com/openmemoai/openmemo-clawhub-skill](https://github.com/openmemoai/openmemo-clawhub-skill)
+
   ```bash
-  git clone https://github.com/openmemoai/openmemo-openclaw-adapter.git
-  cd openmemo-openclaw-adapter
+  git clone https://github.com/openmemoai/openmemo-clawhub-skill.git
+  cd openmemo-clawhub-skill
   npm install
   ```
 
