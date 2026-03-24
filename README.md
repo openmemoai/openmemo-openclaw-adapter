@@ -306,32 +306,9 @@ Stores: project conventions, reusable workflows.
 
 ---
 
-## Installation — Complete Setup (3 Steps)
+## Installation
 
-  ### ⚠️ Important
-
-  **This is an OpenClaw plugin / ClawHub skill.**
-  **It is NOT a Python package.**
-
-  ❌ Do NOT run:
-  ```bash
-  pip install openmemo-openclaw
-  ```
-
-  ---
-
-  ### 🧱 Requirements
-
-  | Requirement | Version |
-  |-------------|---------|
-  | Node.js | >= 18 |
-  | npm / npx | included with Node.js |
-  | Python | >= 3.9 |
-  | OpenClaw | installed |
-
-  ---
-
-  ### Step 1 — Install the skill (ClawHub)
+  ### Step 1 — Install the skill
 
   📦 ClawHub page: [clawhub.ai/openmemoai/openmemo-clawhub-skill](https://clawhub.ai/openmemoai/openmemo-clawhub-skill)
 
@@ -344,103 +321,78 @@ Stores: project conventions, reusable workflows.
   √ OK. Installed openmemo-clawhub-skill
   ```
 
-  > ⚠️ This installs the skill plugin only. The memory adapter is NOT running yet.
-  > You must complete Step 2 before memory will work.
+  ---
+
+  ### Step 2 — Install the OpenMemo memory engine
+
+  ```bash
+  pip install openmemo openmemo-openclaw
+  ```
+
+  Windows (PowerShell):
+  ```powershell
+  python -m pip install openmemo openmemo-openclaw
+  ```
+
+  **Verify you have the correct package** (not a different app with the same name):
+  ```bash
+  pip show openmemo
+  ```
+
+  The output must include:
+  ```
+  Home-page: https://openmemo.ai
+  ```
+
+  If it shows a different homepage or describes a "TUI/memo app", you have a naming conflict — uninstall it and reinstall:
+  ```bash
+  pip uninstall openmemo -y
+  pip install openmemo
+  ```
 
   ---
 
-  ### Step 2 — Install and start the OpenMemo adapter
+  ### Step 3 — Start the OpenMemo server
 
-  Run these once in a separate terminal:
+  > ⚠️ **Always use `python -m openmemo serve`** (not `openmemo serve`).
+  >
+  > There is an unrelated program also named `openmemo` (a TUI memo app). Using `python -m` ensures you run the correct memory engine from your Python environment, regardless of what is in your PATH.
 
-  **macOS / Linux:**
+  macOS / Linux:
   ```bash
-  pip install openmemo openmemo-openclaw
-  openmemo serve
-  ```
-
-  **Windows (PowerShell):**
-  ```powershell
-  python -m pip install openmemo openmemo-openclaw
   python -m openmemo serve
   ```
 
-  Keep `openmemo serve` running in the background.
-
-  ---
-
-  ### Step 3 — Start OpenClaw
-
-  Start your OpenClaw agent normally. The skill detects the adapter automatically and activates Memory Mode.
-
-  You will see memory tools become available:
-  - `check_task_memory`
-  - `recall_memory`
-  - `write_memory`
-
-  ---
-
-  ### Why two separate install steps?
-
-  | Step | Component | What it does |
-  |------|-----------|-------------|
-  | `npx clawhub install` | Skill (OpenClaw plugin) | Registers the skill in OpenClaw workspace |
-  | `pip install openmemo` | Adapter (Python backend) | Installs the local memory engine |
-  | `openmemo serve` | Adapter server | Runs the local memory API on port 8765 |
-
-  The skill and adapter are two separate components. Both must be running.
-
-  ---
-
-  ### Manual Install (Alternative)
-
-  📂 Source: [github.com/openmemoai/openmemo-clawhub-skill](https://github.com/openmemoai/openmemo-clawhub-skill)
-
-  ```bash
-  git clone https://github.com/openmemoai/openmemo-clawhub-skill.git
-  cd openmemo-clawhub-skill
-  npm install
+  Windows (PowerShell):
+  ```powershell
+  python -m openmemo serve
   ```
 
-  Then register in `~/.openclaw/openclaw.json`:
-  ```json
-  {
-    "plugins": ["./path/to/openmemo-clawhub-skill"]
-  }
+  Expected output:
   ```
+  OpenMemo server running on http://localhost:8765
+  ```
+
+  Keep this terminal open (server must stay running).
+
+  ---
+
+  ### Step 4 — Start OpenClaw
+
+  Start your agent normally. The skill detects the running server and activates Memory Mode automatically.
 
   ---
 
   ### 🛠️ Troubleshooting
 
-  #### Windows: `npm error canceled`
-
-  ```powershell
-  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-  ```
-
-  Then retry the install command.
-
-  #### Skill installed but memory not working
-
-  Most likely cause: Step 2 is missing. The adapter is not running.
-
-  Run:
-  ```bash
-  openmemo serve
-  ```
-
-  Then restart OpenClaw.
-
-  #### Common errors
-
   | Error | Cause | Fix |
   |-------|-------|-----|
+  | `openmemo` shows TUI menu (Launch TUI / new / list…) | Wrong app in PATH | Use `python -m openmemo serve` instead |
+  | `openmemo serve` — command not found | Wrong openmemo | `pip uninstall openmemo -y && pip install openmemo` |
   | `npm error canceled` (Windows) | PowerShell execution policy | `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` |
-  | Memory tools not available | Adapter not running | Run `openmemo serve`, restart OpenClaw |
-  | `openmemo` not recognized (Windows) | Scripts not in PATH | Use `python -m openmemo serve` |
-  | `npx` not recognized | Node.js not installed | Install from [nodejs.org](https://nodejs.org/) |
-  | Rate limit exceeded | ClawHub API limit | Wait a few seconds and retry |
+  | Memory tools not available in OpenClaw | Server not running | Run `python -m openmemo serve`, restart OpenClaw |
+  | `pip show openmemo` shows wrong homepage | Name conflict | `pip uninstall openmemo -y && pip install openmemo` |
+  | Rate limit exceeded (clawhub) | API limit | Wait a few seconds and retry |
 
   ---
 
