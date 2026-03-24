@@ -421,7 +421,46 @@ Stores: project conventions, reusable workflows.
 
   ---
 
-  ## Vision
+  ---
+
+    ### 🛠️ Troubleshooting
+
+    #### Windows: `npm error canceled`
+
+    **Symptom:**
+    ```
+    npm error canceled
+    ```
+
+    **Cause:** PowerShell execution policy is blocking npm scripts.
+
+    **Fix — run this once in PowerShell:**
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+    ```
+
+    Then retry:
+    ```powershell
+    npx clawhub@latest install openmemo-clawhub-skill
+    ```
+
+    If still blocked, run PowerShell as Administrator (right-click → "Run as Administrator") and retry.
+
+    ---
+
+    #### Common errors
+
+    | Error | Cause | Fix |
+    |-------|-------|-----|
+    | `npm error canceled` (Windows) | PowerShell execution policy | `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` |
+    | `npm error canceled` persists | Needs admin rights | Run PowerShell as Administrator |
+    | `npx` not recognized | Node.js not installed | Install from [nodejs.org](https://nodejs.org/) |
+    | `openclaw` not recognized | OpenClaw not installed | Install OpenClaw first |
+    | `clawhub` install hangs | Network / firewall | Try `npm install -g clawhub` then `clawhub install openmemo-clawhub-skill` |
+
+    ---
+
+      ## Vision
 
 We believe future software will be built around persistent AI agents.
 
