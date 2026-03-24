@@ -308,23 +308,75 @@ Stores: project conventions, reusable workflows.
 
 ## Installation
 
-Install the adapter:
+  ### Prerequisites
 
-```bash
-pip install openmemo-openclaw
-```
+  Python 3.9 or higher is required. Verify your version:
 
-Start OpenMemo:
+  ```bash
+  python --version
+  ```
 
-```bash
-openmemo serve
-```
+  If Python is not installed, download it from [python.org](https://www.python.org/downloads/).
+  **Windows users:** during installation, check **"Add Python to PATH"**.
 
-Run OpenClaw normally. Memory and recall will start automatically.
+  ---
 
----
+  ### Step 1 — Install the adapter
 
-## Vision
+  **macOS / Linux:**
+
+  ```bash
+  pip install openmemo-openclaw
+  ```
+
+  **Windows (PowerShell or CMD):**
+
+  ```powershell
+  python -m pip install openmemo-openclaw
+  ```
+
+  > **Note for Windows users:** If `pip` is not recognized, always use `python -m pip` instead.
+  > This works regardless of whether pip is in your system PATH.
+
+  ---
+
+  ### Step 2 — Start OpenMemo
+
+  **macOS / Linux:**
+
+  ```bash
+  openmemo serve
+  ```
+
+  **Windows (PowerShell or CMD):**
+
+  ```powershell
+  python -m openmemo serve
+  ```
+
+  > **Note for Windows users:** If `openmemo` is not recognized after installation, use `python -m openmemo serve`.
+
+  ---
+
+  ### Step 3 — Run OpenClaw
+
+  Run OpenClaw normally. Memory and recall will start automatically.
+
+  ---
+
+  ### Troubleshooting
+
+  | Error | Cause | Fix |
+  |-------|-------|-----|
+  | `pip` not recognized (Windows) | Python not added to PATH | Use `python -m pip install openmemo-openclaw` |
+  | `openmemo` not recognized (Windows) | Scripts folder not in PATH | Use `python -m openmemo serve` |
+  | `python` not recognized | Python not installed | Install from [python.org](https://www.python.org/downloads/), check "Add to PATH" |
+  | Permission denied (macOS/Linux) | No write permission | Use `pip install --user openmemo-openclaw` |
+  | `pip3` vs `pip` | Multiple Python versions | Use `pip3` or `python3 -m pip` on macOS/Linux |
+
+  ---
+
+  ## Vision
 
 We believe future software will be built around persistent AI agents.
 
