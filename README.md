@@ -306,21 +306,17 @@ Stores: project conventions, reusable workflows.
 
 ---
 
-## Installation
+## Installation — Complete Setup (3 Steps)
 
   ### ⚠️ Important
 
   **This is an OpenClaw plugin / ClawHub skill.**
-
   **It is NOT a Python package.**
 
   ❌ Do NOT run:
-
   ```bash
   pip install openmemo-openclaw
   ```
-
-  This will fail. This package does not exist on PyPI.
 
   ---
 
@@ -330,21 +326,12 @@ Stores: project conventions, reusable workflows.
   |-------------|---------|
   | Node.js | >= 18 |
   | npm / npx | included with Node.js |
+  | Python | >= 3.9 |
   | OpenClaw | installed |
-
-  Verify your environment:
-
-  ```bash
-  node --version    # must be >= 18
-  npx --version
-  openclaw --version
-  ```
-
-  If Node.js is not installed, download it from [nodejs.org](https://nodejs.org/).
 
   ---
 
-  ### ✅ Option 1: Install via ClawHub (Recommended)
+  ### Step 1 — Install the skill (ClawHub)
 
   📦 ClawHub page: [clawhub.ai/openmemoai/openmemo-clawhub-skill](https://clawhub.ai/openmemoai/openmemo-clawhub-skill)
 
@@ -352,17 +339,60 @@ Stores: project conventions, reusable workflows.
   npx clawhub@latest install openmemo-clawhub-skill
   ```
 
-  Then verify:
-
-  ```bash
-  openclaw plugins list
+  Expected output:
+  ```
+  √ OK. Installed openmemo-clawhub-skill
   ```
 
-  You should see `openmemo-clawhub-skill` in the list.
+  > ⚠️ This installs the skill plugin only. The memory adapter is NOT running yet.
+  > You must complete Step 2 before memory will work.
 
   ---
 
-  ### ✅ Option 2: Manual Install (Plugin Mode)
+  ### Step 2 — Install and start the OpenMemo adapter
+
+  Run these once in a separate terminal:
+
+  **macOS / Linux:**
+  ```bash
+  pip install openmemo openmemo-openclaw
+  openmemo serve
+  ```
+
+  **Windows (PowerShell):**
+  ```powershell
+  python -m pip install openmemo openmemo-openclaw
+  python -m openmemo serve
+  ```
+
+  Keep `openmemo serve` running in the background.
+
+  ---
+
+  ### Step 3 — Start OpenClaw
+
+  Start your OpenClaw agent normally. The skill detects the adapter automatically and activates Memory Mode.
+
+  You will see memory tools become available:
+  - `check_task_memory`
+  - `recall_memory`
+  - `write_memory`
+
+  ---
+
+  ### Why two separate install steps?
+
+  | Step | Component | What it does |
+  |------|-----------|-------------|
+  | `npx clawhub install` | Skill (OpenClaw plugin) | Registers the skill in OpenClaw workspace |
+  | `pip install openmemo` | Adapter (Python backend) | Installs the local memory engine |
+  | `openmemo serve` | Adapter server | Runs the local memory API on port 8765 |
+
+  The skill and adapter are two separate components. Both must be running.
+
+  ---
+
+  ### Manual Install (Alternative)
 
   📂 Source: [github.com/openmemoai/openmemo-clawhub-skill](https://github.com/openmemoai/openmemo-clawhub-skill)
 
@@ -372,95 +402,49 @@ Stores: project conventions, reusable workflows.
   npm install
   ```
 
-  Then register it in `~/.openclaw/openclaw.json`:
-
+  Then register in `~/.openclaw/openclaw.json`:
   ```json
   {
-    "plugins": [
-      "./path/to/openmemo-openclaw-adapter"
-    ]
+    "plugins": ["./path/to/openmemo-clawhub-skill"]
   }
   ```
 
   ---
 
-  ### 🤔 Which method should I use?
+  ### 🛠️ Troubleshooting
 
-  | Situation | Method |
-  |-----------|--------|
-  | Using OpenClaw normally | Use ClawHub (`npx clawhub`) |
-  | Custom development / local changes | Use manual git clone |
-  | ❌ Came from a Python project | Stop — this is not a pip package |
+  #### Windows: `npm error canceled`
 
-  ---
-
-  ### ❌ Common Mistakes
-
-  **Wrong:**
-
-  ```bash
-  pip install openmemo-openclaw   # ❌ WRONG — not a Python package
-  pip install openmemo            # ❌ Wrong package for this use case
+  ```powershell
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
   ```
 
-  **Correct:**
+  Then retry the install command.
 
+  #### Skill installed but memory not working
+
+  Most likely cause: Step 2 is missing. The adapter is not running.
+
+  Run:
   ```bash
-  npx clawhub@latest install openmemo-clawhub-skill   # ✅ Correct
+  openmemo serve
   ```
 
+  Then restart OpenClaw.
+
+  #### Common errors
+
+  | Error | Cause | Fix |
+  |-------|-------|-----|
+  | `npm error canceled` (Windows) | PowerShell execution policy | `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` |
+  | Memory tools not available | Adapter not running | Run `openmemo serve`, restart OpenClaw |
+  | `openmemo` not recognized (Windows) | Scripts not in PATH | Use `python -m openmemo serve` |
+  | `npx` not recognized | Node.js not installed | Install from [nodejs.org](https://nodejs.org/) |
+  | Rate limit exceeded | ClawHub API limit | Wait a few seconds and retry |
+
   ---
 
-  ### 🧪 Verify Installation
-
-  ```bash
-  openclaw plugins list
-  ```
-
-  Expected output includes `openmemo-clawhub-skill`. If not listed, re-run the ClawHub install command.
-
-  ---
-
-  ---
-
-    ### 🛠️ Troubleshooting
-
-    #### Windows: `npm error canceled`
-
-    **Symptom:**
-    ```
-    npm error canceled
-    ```
-
-    **Cause:** PowerShell execution policy is blocking npm scripts.
-
-    **Fix — run this once in PowerShell:**
-    ```powershell
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-    ```
-
-    Then retry:
-    ```powershell
-    npx clawhub@latest install openmemo-clawhub-skill
-    ```
-
-    If still blocked, run PowerShell as Administrator (right-click → "Run as Administrator") and retry.
-
-    ---
-
-    #### Common errors
-
-    | Error | Cause | Fix |
-    |-------|-------|-----|
-    | `npm error canceled` (Windows) | PowerShell execution policy | `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` |
-    | `npm error canceled` persists | Needs admin rights | Run PowerShell as Administrator |
-    | `npx` not recognized | Node.js not installed | Install from [nodejs.org](https://nodejs.org/) |
-    | `openclaw` not recognized | OpenClaw not installed | Install OpenClaw first |
-    | `clawhub` install hangs | Network / firewall | Try `npm install -g clawhub` then `clawhub install openmemo-clawhub-skill` |
-
-    ---
-
-      ## Vision
+  ## Vision
 
 We believe future software will be built around persistent AI agents.
 
