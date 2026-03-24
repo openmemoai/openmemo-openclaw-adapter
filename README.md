@@ -308,71 +308,112 @@ Stores: project conventions, reusable workflows.
 
 ## Installation
 
-  ### Prerequisites
+  ### ⚠️ Important
 
-  Python 3.9 or higher is required. Verify your version:
+  **This is an OpenClaw plugin / ClawHub skill.**
 
-  ```bash
-  python --version
-  ```
+  **It is NOT a Python package.**
 
-  If Python is not installed, download it from [python.org](https://www.python.org/downloads/).
-  **Windows users:** during installation, check **"Add Python to PATH"**.
-
-  ---
-
-  ### Step 1 — Install the adapter
-
-  **macOS / Linux:**
+  ❌ Do NOT run:
 
   ```bash
   pip install openmemo-openclaw
   ```
 
-  **Windows (PowerShell or CMD):**
-
-  ```powershell
-  python -m pip install openmemo-openclaw
-  ```
-
-  > **Note for Windows users:** If `pip` is not recognized, always use `python -m pip` instead.
-  > This works regardless of whether pip is in your system PATH.
+  This will fail. This package does not exist on PyPI.
 
   ---
 
-  ### Step 2 — Start OpenMemo
+  ### 🧱 Requirements
 
-  **macOS / Linux:**
+  | Requirement | Version |
+  |-------------|---------|
+  | Node.js | >= 18 |
+  | npm / npx | included with Node.js |
+  | OpenClaw | installed |
+
+  Verify your environment:
 
   ```bash
-  openmemo serve
+  node --version    # must be >= 18
+  npx --version
+  openclaw --version
   ```
 
-  **Windows (PowerShell or CMD):**
-
-  ```powershell
-  python -m openmemo serve
-  ```
-
-  > **Note for Windows users:** If `openmemo` is not recognized after installation, use `python -m openmemo serve`.
+  If Node.js is not installed, download it from [nodejs.org](https://nodejs.org/).
 
   ---
 
-  ### Step 3 — Run OpenClaw
+  ### ✅ Option 1: Install via ClawHub (Recommended)
 
-  Run OpenClaw normally. Memory and recall will start automatically.
+  ```bash
+  npx clawhub@latest install openmemo-clawhub-skill
+  ```
+
+  Then verify:
+
+  ```bash
+  openclaw plugins list
+  ```
+
+  You should see `openmemo-clawhub-skill` in the list.
 
   ---
 
-  ### Troubleshooting
+  ### ✅ Option 2: Manual Install (Plugin Mode)
 
-  | Error | Cause | Fix |
-  |-------|-------|-----|
-  | `pip` not recognized (Windows) | Python not added to PATH | Use `python -m pip install openmemo-openclaw` |
-  | `openmemo` not recognized (Windows) | Scripts folder not in PATH | Use `python -m openmemo serve` |
-  | `python` not recognized | Python not installed | Install from [python.org](https://www.python.org/downloads/), check "Add to PATH" |
-  | Permission denied (macOS/Linux) | No write permission | Use `pip install --user openmemo-openclaw` |
-  | `pip3` vs `pip` | Multiple Python versions | Use `pip3` or `python3 -m pip` on macOS/Linux |
+  ```bash
+  git clone https://github.com/openmemoai/openmemo-openclaw-adapter.git
+  cd openmemo-openclaw-adapter
+  npm install
+  ```
+
+  Then register it in `~/.openclaw/openclaw.json`:
+
+  ```json
+  {
+    "plugins": [
+      "./path/to/openmemo-openclaw-adapter"
+    ]
+  }
+  ```
+
+  ---
+
+  ### 🤔 Which method should I use?
+
+  | Situation | Method |
+  |-----------|--------|
+  | Using OpenClaw normally | Use ClawHub (`npx clawhub`) |
+  | Custom development / local changes | Use manual git clone |
+  | ❌ Came from a Python project | Stop — this is not a pip package |
+
+  ---
+
+  ### ❌ Common Mistakes
+
+  **Wrong:**
+
+  ```bash
+  pip install openmemo-openclaw   # ❌ WRONG — not a Python package
+  pip install openmemo            # ❌ Wrong package for this use case
+  ```
+
+  **Correct:**
+
+  ```bash
+  npx clawhub@latest install openmemo-clawhub-skill   # ✅ Correct
+  ```
+
+  ---
+
+  ### 🧪 Verify Installation
+
+  ```bash
+  openclaw plugins list
+  ```
+
+  Expected output includes `openmemo-clawhub-skill`. If not listed, re-run the ClawHub install command.
 
   ---
 
